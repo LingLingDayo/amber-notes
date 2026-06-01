@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useStickyNotesStore } from '../stores/stickyNotes';
-import { Search, Plus, Trash2, Sun, Moon, X, ArrowUpDown } from 'lucide-vue-next';
+import { Search, Plus, Trash2, Sun, Moon, X, ArrowUpDown, ChevronDown } from 'lucide-vue-next';
 import { storage, isUTools } from '../utils/storage';
 
 const store = useStickyNotesStore();
@@ -11,6 +11,42 @@ const isDark = ref(false);
 
 // 排序弹窗状态
 const showSortPopover = ref(false);
+
+// 搜索目标弹窗状态
+const showTargetPopover = ref(false);
+
+const targetOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'title', label: '标题' },
+  { value: 'content', label: '内容' },
+  { value: 'tag', label: '标签' }
+] as const;
+
+// 动态 placeholder text
+const searchPlaceholder = computed(() => {
+  switch (store.searchTarget) {
+    case 'title': return '搜索便签标题...';
+    case 'content': return '搜索便签内容...';
+    case 'tag': return '搜索便签标签...';
+    default: return '搜索全部信息...';
+  }
+});
+
+const currentTargetLabel = computed(() => {
+  const option = targetOptions.find(opt => opt.value === store.searchTarget);
+  return option ? option.label : '全部';
+});
+
+const changeSearchTarget = (target: 'all' | 'title' | 'content' | 'tag') => {
+  store.searchTarget = target;
+  showTargetPopover.value = false;
+  
+  let targetName = '全部信息';
+  if (target === 'title') targetName = '标题';
+  if (target === 'content') targetName = '内容';
+  if (target === 'tag') targetName = '标签';
+  store.showToast(`已切换搜索范围为：${targetName}`, 'success');
+};
 
 // 初始化主题与事件监听
 onMounted(() => {
@@ -83,6 +119,7 @@ const closeSortPopover = () => {
 
 const handleDocumentClick = () => {
   closeSortPopover();
+  showTargetPopover.value = false;
 };
 
 // 清空当前分类便签
@@ -121,16 +158,45 @@ const clearSearch = () => {
       <input 
         v-model="store.searchQuery"
         type="text" 
-        placeholder="搜索便签内容或标题..."
+        :placeholder="searchPlaceholder"
         class="search-input"
       />
-      <button 
-        v-if="store.searchQuery" 
-        class="clear-search-btn"
-        @click="clearSearch"
-      >
-        <X class="clear-icon" />
-      </button>
+      <div class="search-right-actions">
+        <button 
+          v-if="store.searchQuery" 
+          class="clear-search-btn"
+          @click="clearSearch"
+        >
+          <X class="clear-icon" />
+        </button>
+        <div v-if="store.searchQuery" class="search-divider"></div>
+        <!-- 搜索目标选择器 -->
+        <div class="search-target-wrapper" @click.stop>
+          <button 
+            class="target-trigger-btn" 
+            title="搜索范围"
+            @click="showTargetPopover = !showTargetPopover"
+          >
+            <span>{{ currentTargetLabel }}</span>
+            <ChevronDown class="chevron-icon" />
+          </button>
+          
+          <div v-if="showTargetPopover" class="target-popover">
+            <div class="popover-title">搜索范围</div>
+            <div class="target-list">
+              <button 
+                v-for="opt in targetOptions"
+                :key="opt.value"
+                class="target-item"
+                :class="{ active: store.searchTarget === opt.value }"
+                @click="changeSearchTarget(opt.value)"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 按钮操作区 -->
@@ -230,7 +296,7 @@ const clearSearch = () => {
   border-radius: 12px;
   padding: 6px 14px;
   flex: 1;
-  max-width: 420px;
+  max-width: 450px;
   position: relative;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -240,7 +306,6 @@ const clearSearch = () => {
   }
 
   &:focus-within {
-    max-width: 480px;
     border-color: var(--accent-color);
     box-shadow: 0 0 0 3px var(--accent-light);
     background: rgba(0, 0, 0, 0.18);
@@ -272,18 +337,130 @@ const clearSearch = () => {
 }
 
 .clear-search-btn {
-  position: absolute;
-  right: 10px;
-  padding: 4px;
-  border-radius: 50%;
-  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
+  }
+}
+
+.search-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+
+  .light-theme & {
+    background: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.search-target-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.target-trigger-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .light-theme & {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.06);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+
+    .light-theme & {
+      background: rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .chevron-icon {
+    width: 10px;
+    height: 10px;
+    opacity: 0.7;
+  }
+}
+
+.target-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  padding: 6px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  min-width: 100px;
+  animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  .popover-title {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    padding: 0 4px;
+  }
+}
+
+.target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.target-item {
+  text-align: left;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  width: 100%;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+
+    .light-theme & {
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  &.active {
+    background: var(--accent-light);
+    color: var(--accent-color);
+    font-weight: 600;
   }
 }
 

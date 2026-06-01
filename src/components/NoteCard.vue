@@ -14,6 +14,8 @@ const store = useStickyNotesStore();
 const isEditing = ref(false);
 const editTitle = ref(props.note.title || '');
 const editContent = ref(props.note.content);
+const editTags = ref<string[]>([]);
+const newTagInput = ref('');
 
 const titleInputRef = ref<HTMLInputElement | null>(null);
 const contentInputRef = ref<HTMLTextAreaElement | null>(null);
@@ -22,6 +24,26 @@ const contentInputRef = ref<HTMLTextAreaElement | null>(null);
 const showColorPicker = ref(false);
 // 是否显示移动分类面板
 const showFolderPicker = ref(false);
+
+const addTag = () => {
+  let tag = newTagInput.value.replace(/，/g, ',').trim();
+  if (tag.endsWith(',')) {
+    tag = tag.slice(0, -1).trim();
+  }
+  if (tag) {
+    const tagsToAdd = tag.split(',').map(t => t.trim()).filter(Boolean);
+    tagsToAdd.forEach(t => {
+      if (!editTags.value.includes(t)) {
+        editTags.value.push(t);
+      }
+    });
+  }
+  newTagInput.value = '';
+};
+
+const removeTag = (index: number) => {
+  editTags.value.splice(index, 1);
+};
 
 // 获取当前便签颜色的样式配置
 const colorStyle = computed(() => {
@@ -49,6 +71,8 @@ const enterEditMode = async () => {
   isEditing.value = true;
   editTitle.value = props.note.title || '';
   editContent.value = props.note.content;
+  editTags.value = props.note.tags ? [...props.note.tags] : [];
+  newTagInput.value = '';
   await nextTick();
   contentInputRef.value?.focus();
   adjustTextareaHeight();
@@ -56,9 +80,11 @@ const enterEditMode = async () => {
 
 // 保存编辑
 const saveEdit = () => {
+  addTag();
   store.updateNote(props.note.id, {
     title: editTitle.value.trim(),
-    content: editContent.value
+    content: editContent.value,
+    tags: editTags.value
   });
   isEditing.value = false;
 };
@@ -68,6 +94,8 @@ const cancelEdit = () => {
   isEditing.value = false;
   editTitle.value = props.note.title || '';
   editContent.value = props.note.content;
+  editTags.value = [];
+  newTagInput.value = '';
 };
 
 // 双击粘贴逻辑
@@ -210,7 +238,32 @@ const handleDrop = (e: DragEvent) => {
         @keydown.ctrl.enter="saveEdit"
         @input="adjustTextareaHeight"
       ></textarea>
-      <pre v-else class="card-content">{{ note.content || '双击粘贴，点击右上角或卡片空白处编辑...' }}</pre>
+      <template v-else>
+        <pre class="card-content">{{ note.content || '双击粘贴，点击右上角或卡片空白处编辑...' }}</pre>
+        <!-- 便签标签展示 -->
+        <div v-if="note.tags && note.tags.length > 0" class="note-tags-list">
+          <span v-for="tag in note.tags" :key="tag" class="note-tag-badge">
+            # {{ tag }}
+          </span>
+        </div>
+      </template>
+    </div>
+
+    <!-- 编辑状态下的标签编辑器 -->
+    <div v-if="isEditing" class="tags-editor" @click.stop>
+      <div v-for="(tag, idx) in editTags" :key="idx" class="edit-tag-badge">
+        <span>{{ tag }}</span>
+        <button class="delete-tag-btn" title="删除标签" @click.stop="removeTag(idx)">×</button>
+      </div>
+      <input 
+        v-model="newTagInput"
+        type="text"
+        placeholder="+ 添加标签 (按回车或逗号键)"
+        class="tag-input"
+        @keydown.enter.prevent="addTag"
+        @keydown.comma.prevent="addTag"
+        @blur="addTag"
+      />
     </div>
 
     <!-- 编辑态底部的保存/取消按钮 -->
@@ -713,6 +766,118 @@ const handleDrop = (e: DragEvent) => {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+// 便签标签样式
+.note-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.note-tag-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: inherit;
+  opacity: 0.85;
+
+  .dark-theme & {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+// 标签编辑器样式
+.tags-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  margin-bottom: 6px;
+
+  .dark-theme & {
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.edit-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: inherit;
+
+  .dark-theme & {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .delete-tag-btn {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.tag-input {
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: inherit;
+  flex: 1;
+  min-width: 80px;
+
+  .dark-theme & {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  &:focus {
+    background: rgba(255, 255, 255, 0.35);
+    border-style: solid;
+    border-color: var(--card-text);
+    outline: none;
+
+    .dark-theme & {
+      background: rgba(0, 0, 0, 0.35);
+      border-color: var(--card-text-dark);
+    }
+  }
+
+  &::placeholder {
+    color: inherit;
+    opacity: 0.5;
   }
 }
 </style>

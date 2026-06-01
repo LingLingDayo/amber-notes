@@ -13,6 +13,7 @@ export interface Note {
   isPinned: boolean;
   createdAt: number;
   updatedAt: number;
+  tags?: string[];
 }
 
 export interface NoteColorPreset {

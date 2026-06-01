@@ -66,6 +66,7 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   const notes = ref<Note[]>([]);
   const currentCategoryId = ref<string>('all');
   const searchQuery = ref<string>('');
+  const searchTarget = ref<'all' | 'title' | 'content' | 'tag'>('all');
   const sortMode = ref<'date' | 'title' | 'custom'>('date');
   const draggedNoteId = ref<string | null>(null);
 
@@ -138,7 +139,8 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
             color: 'yellow',
             isPinned: true,
             createdAt: Date.now(),
-            updatedAt: Date.now()
+            updatedAt: Date.now(),
+            tags: ['欢迎', '指南']
           },
           {
             id: 'n2',
@@ -148,7 +150,8 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
             color: 'blue',
             isPinned: false,
             createdAt: Date.now() - 1000,
-            updatedAt: Date.now() - 1000
+            updatedAt: Date.now() - 1000,
+            tags: ['特色', '效率']
           },
           {
             id: 'n3',
@@ -158,7 +161,8 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
             color: 'green',
             isPinned: false,
             createdAt: Date.now() - 2000,
-            updatedAt: Date.now() - 2000
+            updatedAt: Date.now() - 2000,
+            tags: ['操作', '快速开始']
           }
         ];
         saveNotes();
@@ -237,7 +241,8 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
       color,
       isPinned: false,
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      tags: []
     };
 
     notes.value.unshift(newNote); // 新增便签放在最前面
@@ -279,13 +284,25 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
       result = result.filter(n => n.categoryId === currentCategoryId.value);
     }
 
-    // 2. 搜索词过滤 (包含标题和内容)
+    // 2. 搜索词过滤 (支持根据不同目标过滤)
     if (searchQuery.value.trim()) {
       const q = searchQuery.value.toLowerCase().trim();
-      result = result.filter(n => 
-        (n.title && n.title.toLowerCase().includes(q)) || 
-        n.content.toLowerCase().includes(q)
-      );
+      result = result.filter(n => {
+        const titleMatch = n.title ? n.title.toLowerCase().includes(q) : false;
+        const contentMatch = n.content.toLowerCase().includes(q);
+        const tagsMatch = n.tags ? n.tags.some(tag => tag.toLowerCase().includes(q)) : false;
+
+        if (searchTarget.value === 'title') {
+          return titleMatch;
+        } else if (searchTarget.value === 'content') {
+          return contentMatch;
+        } else if (searchTarget.value === 'tag') {
+          return tagsMatch;
+        } else {
+          // 'all'
+          return titleMatch || contentMatch || tagsMatch;
+        }
+      });
     }
 
     // 3. 排序
@@ -383,7 +400,8 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
           color: n.color,
           isPinned: !!n.isPinned,
           createdAt: n.createdAt || Date.now(),
-          updatedAt: n.updatedAt || Date.now()
+          updatedAt: n.updatedAt || Date.now(),
+          tags: Array.isArray(n.tags) ? n.tags.filter((t: any) => typeof t === 'string') : []
         });
       });
       notes.value = Array.from(noteMap.values());
@@ -402,7 +420,8 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   // 导出单个便签为 TXT 文件
   const exportSingleNoteAsTxt = (note: Note) => {
     const title = note.title || '无标题便签';
-    const content = `${title}\n创建时间: ${new Date(note.createdAt).toLocaleString()}\n---------------------------\n\n${note.content}`;
+    const tagsStr = note.tags && note.tags.length > 0 ? `标签: ${note.tags.map(t => `#${t}`).join(' ')}\n` : '';
+    const content = `${title}\n创建时间: ${new Date(note.createdAt).toLocaleString()}\n${tagsStr}---------------------------\n\n${note.content}`;
     const filename = `${title.replace(/[\\/:*?"<>|]/g, '_')}.txt`;
     
     const isNative = downloadOrWriteFile(content, filename, 'text/plain;charset=utf-8');
@@ -452,6 +471,7 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
     notes,
     currentCategoryId,
     searchQuery,
+    searchTarget,
     filteredNotes,
     toastMessage,
     toastType,
