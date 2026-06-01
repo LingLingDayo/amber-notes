@@ -153,15 +153,15 @@ const clearSearch = () => {
 <template>
   <div class="action-bar-container">
     <!-- 搜索区域 -->
-    <div class="search-wrapper">
-      <Search class="search-icon" />
-      <input 
-        v-model="store.searchQuery"
-        type="text" 
-        :placeholder="searchPlaceholder"
-        class="search-input"
-      />
-      <div class="search-right-actions">
+    <div class="search-section">
+      <div class="search-wrapper">
+        <Search class="search-icon" />
+        <input 
+          v-model="store.searchQuery"
+          type="text" 
+          :placeholder="searchPlaceholder"
+          class="search-input"
+        />
         <button 
           v-if="store.searchQuery" 
           class="clear-search-btn"
@@ -169,31 +169,31 @@ const clearSearch = () => {
         >
           <X class="clear-icon" />
         </button>
-        <div v-if="store.searchQuery" class="search-divider"></div>
-        <!-- 搜索目标选择器 -->
-        <div class="search-target-wrapper" @click.stop>
-          <button 
-            class="target-trigger-btn" 
-            title="搜索范围"
-            @click="showTargetPopover = !showTargetPopover"
-          >
-            <span>{{ currentTargetLabel }}</span>
-            <ChevronDown class="chevron-icon" />
-          </button>
-          
-          <div v-if="showTargetPopover" class="target-popover">
-            <div class="popover-title">搜索范围</div>
-            <div class="target-list">
-              <button 
-                v-for="opt in targetOptions"
-                :key="opt.value"
-                class="target-item"
-                :class="{ active: store.searchTarget === opt.value }"
-                @click="changeSearchTarget(opt.value)"
-              >
-                {{ opt.label }}
-              </button>
-            </div>
+      </div>
+
+      <!-- 搜索目标选择器 -->
+      <div class="search-target-wrapper" @click.stop>
+        <button 
+          class="target-trigger-btn" 
+          title="搜索范围"
+          @click="showTargetPopover = !showTargetPopover"
+        >
+          <span>{{ currentTargetLabel }}</span>
+          <ChevronDown class="chevron-icon" />
+        </button>
+        
+        <div v-if="showTargetPopover" class="target-popover">
+          <div class="popover-title">搜索范围</div>
+          <div class="target-list">
+            <button 
+              v-for="opt in targetOptions"
+              :key="opt.value"
+              class="target-item"
+              :class="{ active: store.searchTarget === opt.value }"
+              @click="changeSearchTarget(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
           </div>
         </div>
       </div>
@@ -286,6 +286,16 @@ const clearSearch = () => {
   border-bottom: 1px solid var(--panel-border);
   backdrop-filter: blur(var(--glass-blur));
   gap: 16px;
+  position: relative;
+  z-index: 50;
+}
+
+.search-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 520px;
 }
 
 .search-wrapper {
@@ -296,7 +306,8 @@ const clearSearch = () => {
   border-radius: 12px;
   padding: 6px 14px;
   flex: 1;
-  max-width: 450px;
+  height: 38px;
+  box-sizing: border-box;
   position: relative;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -345,26 +356,11 @@ const clearSearch = () => {
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-left: 8px;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
-  }
-}
-
-.search-right-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.search-divider {
-  width: 1px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.15);
-
-  .light-theme & {
-    background: rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -377,34 +373,44 @@ const clearSearch = () => {
 .target-trigger-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  span {
+    white-space: nowrap;
+  }
 
   .light-theme & {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.08);
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.15);
     color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.15);
 
     .light-theme & {
-      background: rgba(0, 0, 0, 0.08);
+      background: rgba(0, 0, 0, 0.04);
     }
   }
 
   .chevron-icon {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     opacity: 0.7;
   }
 }
@@ -413,22 +419,25 @@ const clearSearch = () => {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: var(--panel-bg);
+  background: #ffffff;
   border: 1px solid var(--panel-border);
   padding: 6px;
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(10px);
   z-index: 100;
-  min-width: 100px;
+  min-width: 110px;
   animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
+  .dark-theme & {
+    background: #1e293b;
+  }
+
   .popover-title {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     color: var(--text-muted);
-    margin-bottom: 4px;
-    padding: 0 4px;
+    margin-bottom: 6px;
+    padding: 2px 6px;
   }
 }
 
@@ -532,15 +541,18 @@ const clearSearch = () => {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: var(--panel-bg);
+  background: #ffffff;
   border: 1px solid var(--panel-border);
   padding: 8px;
   border-radius: 12px;
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(10px);
   z-index: 100;
   min-width: 150px;
   animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  .dark-theme & {
+    background: #1e293b;
+  }
 
   .popover-title {
     font-size: 10px;
