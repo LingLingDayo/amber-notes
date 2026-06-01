@@ -176,6 +176,12 @@ const handleDrop = (e: DragEvent) => {
   e.preventDefault();
   store.draggedNoteId = null;
 };
+
+// 鼠标移出卡片时，自动关闭已打开的选择面板
+const handleMouseLeave = () => {
+  showColorPicker.value = false;
+  showFolderPicker.value = false;
+};
 </script>
 
 <template>
@@ -190,6 +196,7 @@ const handleDrop = (e: DragEvent) => {
     @dragenter="handleDragEnter"
     @dragend="handleDragEnd"
     @drop="handleDrop"
+    @mouseleave="handleMouseLeave"
   >
     <!-- 置顶针和大头针效果 -->
     <button 
@@ -676,7 +683,7 @@ const handleDrop = (e: DragEvent) => {
   position: absolute;
   bottom: calc(100% + 8px);
   right: 0;
-  background: var(--panel-bg);
+  background: #ffffff;
   border: 1px solid var(--panel-border);
   padding: 6px;
   border-radius: 10px;
@@ -686,6 +693,10 @@ const handleDrop = (e: DragEvent) => {
   backdrop-filter: blur(10px);
   z-index: 3;
   animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  .dark-theme & {
+    background: #1e293b;
+  }
 }
 
 .color-dot {
@@ -709,7 +720,7 @@ const handleDrop = (e: DragEvent) => {
   position: absolute;
   bottom: calc(100% + 8px);
   right: 0;
-  background: var(--panel-bg);
+  background: #ffffff;
   border: 1px solid var(--panel-border);
   padding: 8px;
   border-radius: 12px;
@@ -718,6 +729,10 @@ const handleDrop = (e: DragEvent) => {
   z-index: 3;
   min-width: 120px;
   animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  .dark-theme & {
+    background: #1e293b;
+  }
 
   .popover-title {
     font-size: 10px;
@@ -747,8 +762,12 @@ const handleDrop = (e: DragEvent) => {
   text-overflow: ellipsis;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
+
+    .light-theme & {
+      background: rgba(0, 0, 0, 0.05);
+    }
   }
 
   &.active {
