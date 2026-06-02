@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { Note } from '@type';
 
 const props = defineProps<{
@@ -16,6 +16,14 @@ const emit = defineEmits<{
 
 const contentInputRef = ref<HTMLTextAreaElement | null>(null);
 
+// 标签测量与显示状态
+const measureContainerRef = ref<HTMLDivElement | null>(null);
+const measureEllipsisRef = ref<HTMLSpanElement | null>(null);
+const visibleTags = ref<string[]>([]);
+const hasMore = ref(false);
+const allTagsText = ref('');
+let resizeObserver: ResizeObserver | null = null;
+
 // 自适应调整输入框高度
 const adjustTextareaHeight = () => {
   const el = contentInputRef.value;
@@ -24,12 +32,143 @@ const adjustTextareaHeight = () => {
   el.style.height = `${el.scrollHeight}px`;
 };
 
-// 监听编辑状态，自动聚焦并调整高度
+// 计算可见标签的核心逻辑
+const calculateVisibleTags = () => {
+  const tags = props.note.tags;
+  if (!tags || tags.length === 0) {
+    visibleTags.value = [];
+    hasMore.value = false;
+    allTagsText.value = '';
+    return;
+  }
+
+  allTagsText.value = tags.map(t => `#${t}`).join(' ');
+
+  nextTick(() => {
+    const container = measureContainerRef.value;
+    if (!container) return;
+
+    const children = container.children;
+    if (children.length < 2) {
+      visibleTags.value = [...tags];
+      hasMore.value = false;
+      return;
+    }
+
+    const ellipsisEl = measureEllipsisRef.value;
+    const ellipsisWidth = ellipsisEl ? ellipsisEl.offsetWidth : 30;
+    const gap = 6;
+
+    const lineTops: number[] = [];
+    const elementsInfo: { index: number; offsetLeft: number; offsetWidth: number; offsetTop: number }[] = [];
+    const tagsCount = tags.length;
+
+    for (let i = 0; i < tagsCount; i++) {
+      const el = children[i] as HTMLElement;
+      if (!el) continue;
+      const offsetTop = el.offsetTop;
+      const offsetLeft = el.offsetLeft;
+      const offsetWidth = el.offsetWidth;
+
+      let lineIndex = lineTops.findIndex(top => Math.abs(top - offsetTop) < 5);
+      if (lineIndex === -1) {
+        lineTops.push(offsetTop);
+        lineTops.sort((a, b) => a - b);
+        lineIndex = lineTops.indexOf(offsetTop);
+      }
+
+      elementsInfo.push({
+        index: i,
+        offsetLeft,
+        offsetWidth,
+        offsetTop
+      });
+    }
+
+    const containerWidth = container.clientWidth;
+    const rows: typeof elementsInfo[] = lineTops.map(() => []);
+    elementsInfo.forEach(info => {
+      const lineIndex = lineTops.findIndex(top => Math.abs(top - info.offsetTop) < 5);
+      if (lineIndex !== -1) {
+        rows[lineIndex].push(info);
+      }
+    });
+
+    const totalLines = rows.length;
+
+    if (totalLines <= 2) {
+      visibleTags.value = [...tags];
+      hasMore.value = false;
+    } else {
+      hasMore.value = true;
+      let cutoffIndex = -1;
+      const secondRow = rows[1];
+
+      if (secondRow && secondRow.length > 0) {
+        for (let i = secondRow.length - 1; i >= 0; i--) {
+          const item = secondRow[i];
+          const remainingSpace = containerWidth - (item.offsetLeft + item.offsetWidth);
+          if (remainingSpace >= gap + ellipsisWidth) {
+            cutoffIndex = item.index;
+            break;
+          }
+        }
+      }
+
+      if (cutoffIndex === -1) {
+        const firstRow = rows[0];
+        if (firstRow && firstRow.length > 0) {
+          for (let i = firstRow.length - 1; i >= 0; i--) {
+            const item = firstRow[i];
+            const remainingSpace = containerWidth - (item.offsetLeft + item.offsetWidth);
+            if (remainingSpace >= gap + ellipsisWidth) {
+              cutoffIndex = item.index;
+              break;
+            }
+          }
+        }
+      }
+
+      if (cutoffIndex === -1) {
+        visibleTags.value = [];
+      } else {
+        visibleTags.value = tags.slice(0, cutoffIndex + 1);
+      }
+    }
+  });
+};
+
+// 监听编辑状态
 watch(() => props.isEditing, async (newVal) => {
   if (newVal) {
     await nextTick();
     contentInputRef.value?.focus();
     adjustTextareaHeight();
+  } else {
+    calculateVisibleTags();
+  }
+});
+
+// 监听便签的标签变化
+watch(() => props.note.tags, () => {
+  calculateVisibleTags();
+}, { deep: true, immediate: true });
+
+onMounted(() => {
+  calculateVisibleTags();
+  const container = measureContainerRef.value;
+  if (container && window.ResizeObserver) {
+    resizeObserver = new ResizeObserver(() => {
+      calculateVisibleTags();
+    });
+    resizeObserver.observe(container);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
   }
 });
 </script>
@@ -53,13 +192,31 @@ watch(() => props.isEditing, async (newVal) => {
       <!-- 便签标签展示 -->
       <div v-if="note.tags && note.tags.length > 0" class="note-tags-list">
         <span 
-          v-for="tag in note.tags" 
+          v-for="tag in visibleTags" 
           :key="tag" 
           class="note-tag-badge"
           :data-tooltip="tag"
         >
           # {{ tag }}
         </span>
+        <span 
+          v-if="hasMore" 
+          class="note-tag-badge more"
+          :data-tooltip="allTagsText"
+        >
+          ...
+        </span>
+      </div>
+      <!-- 隐藏的便签标签测量区域 -->
+      <div v-if="note.tags && note.tags.length > 0" ref="measureContainerRef" class="note-tags-list-measure">
+        <span 
+          v-for="tag in note.tags" 
+          :key="'measure-' + tag" 
+          class="note-tag-badge"
+        >
+          # {{ tag }}
+        </span>
+        <span ref="measureEllipsisRef" class="note-tag-badge more">...</span>
       </div>
     </template>
   </div>
@@ -72,6 +229,7 @@ watch(() => props.isEditing, async (newVal) => {
   padding-top: 4px;
   padding-bottom: 8px;
   overflow-y: auto;
+  position: relative;
 
   &.is-view-mode {
     display: flex;
@@ -187,6 +345,20 @@ watch(() => props.isEditing, async (newVal) => {
   overflow: hidden;
 }
 
+.note-tags-list-measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  z-index: -9999;
+  opacity: 0;
+}
+
 .note-tag-badge {
   font-size: 10px;
   padding: 2px 8px;
@@ -205,5 +377,9 @@ watch(() => props.isEditing, async (newVal) => {
   overflow: hidden;
   word-break: break-all;
   white-space: normal;
+
+  &.more {
+    cursor: help;
+  }
 }
 </style>
