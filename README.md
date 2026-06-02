@@ -43,7 +43,8 @@ sticky-notes/
 │   ├── plugin.json             # uTools 插件配置文件
 │   └── preload/                # Node.js preload 底层写盘服务目录
 ├── src/                        # 源代码目录
-│   ├── components/             # UI 组件目录
+│   ├── components/             # 公共 UI 组件目录
+│   ├── modules/                # 业务 UI 组件目录
 │   ├── router/                 # 路由配置
 │   ├── stores/                 # Pinia 状态管理
 │   ├── styles/                 # 全局样式与预处理器变量目录
