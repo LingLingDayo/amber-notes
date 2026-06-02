@@ -4,8 +4,8 @@ import { useStickyNotesStore } from '@stores/stickyNotes';
 import CategorySidebar from '@modules/CategorySidebar/CategorySidebar.vue';
 import ActionBar from '@modules/ActionBar/ActionBar.vue';
 import NoteGrid from '@modules/NoteGrid.vue';
-import Toast from '@modules/Toast.vue';
-import ConfirmModal from '@modules/ConfirmModal.vue';
+import Toast from '@components/Toast.vue';
+import ConfirmModal from '@components/ConfirmModal.vue';
 
 const store = useStickyNotesStore();
 
