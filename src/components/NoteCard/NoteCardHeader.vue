@@ -22,7 +22,7 @@ const emit = defineEmits<{
   <button 
     class="pin-btn" 
     :class="{ active: note.isPinned }"
-    title="置顶便签" 
+    :data-tooltip="note.isPinned ? '取消置顶' : '置顶便签'" 
     @click.stop="emit('toggle-pin')"
   >
     <Pin class="pin-icon" />
@@ -45,7 +45,7 @@ const emit = defineEmits<{
     <button 
       v-if="!isEditing" 
       class="edit-trigger-btn" 
-      title="编辑便签"
+      data-tooltip="编辑便签"
       @click.stop="emit('enter-edit')"
     >
       <Edit2 class="edit-icon" />
