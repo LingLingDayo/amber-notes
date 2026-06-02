@@ -135,7 +135,8 @@ const getNoteCount = (categoryId: string) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  height: 42px;
+  padding: 0 14px;
   border-radius: 10px;
   cursor: pointer;
   color: var(--text-secondary);
