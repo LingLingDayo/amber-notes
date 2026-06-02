@@ -3,8 +3,7 @@
  */
 export const isUTools = (): boolean => {
   return typeof window !== 'undefined' && 
-         window.utools !== undefined && 
-         typeof window.utools.onPluginEnter === 'function';
+         window.utools !== undefined;
 };
 
 /**
@@ -14,7 +13,12 @@ export const storage = {
   getItem(key: string): string | null {
     if (isUTools()) {
       try {
-        return window.utools.dbStorage.getItem(key);
+        const val = window.utools.dbStorage.getItem(key);
+        if (val === null || val === undefined) return null;
+        if (typeof val === 'object') {
+          return JSON.stringify(val);
+        }
+        return val;
       } catch (e) {
         console.error('uTools dbStorage.getItem error, falling back to localStorage:', e);
       }

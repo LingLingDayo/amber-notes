@@ -69,6 +69,7 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   const searchTarget = ref<'all' | 'title' | 'content' | 'tag'>('all');
   const sortMode = ref<'date' | 'title' | 'custom'>('date');
   const draggedNoteId = ref<string | null>(null);
+  const editingNoteId = ref<string | null>(null);
 
   // 确认弹窗状态 (Promise 驱动)
   const confirmState = ref({ show: false, title: '', message: '' });
@@ -247,6 +248,10 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
 
     notes.value.unshift(newNote); // 新增便签放在最前面
     saveNotes();
+
+    // 记录新建的便签 ID，用于在组件渲染时自动触发编辑模式
+    editingNoteId.value = newNote.id;
+
     return newNote;
   };
 
@@ -493,6 +498,7 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
     exportSingleNoteAsTxt,
     sortMode,
     draggedNoteId,
+    editingNoteId,
     setSortMode,
     moveNote
   };
