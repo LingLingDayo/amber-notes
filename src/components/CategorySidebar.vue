@@ -168,10 +168,10 @@ const getNoteCount = (categoryId: string) => {
           <div class="item-right" @click.stop>
             <span class="item-badge">{{ getNoteCount(cat.id) }}</span>
             <div class="item-actions">
-              <button class="action-btn" title="编辑分类" @click="startEdit(cat.id, cat.name)">
+              <button class="action-btn" data-tooltip="编辑分类" @click="startEdit(cat.id, cat.name)">
                 <Edit3 class="action-icon" />
               </button>
-              <button class="action-btn delete" title="删除分类" @click="confirmDelete(cat.id, cat.name)">
+              <button class="action-btn delete" data-tooltip="删除分类" @click="confirmDelete(cat.id, cat.name)">
                 <Trash2 class="action-icon" />
               </button>
             </div>
@@ -217,11 +217,11 @@ const getNoteCount = (categoryId: string) => {
           class="hidden-file-input"
           @change="handleFileImport"
         />
-        <button class="backup-btn" title="导出备份为 JSON 文件" @click="store.exportBackup">
+        <button class="backup-btn" data-tooltip="导出备份为 JSON 文件" @click="store.exportBackup">
           <Download class="backup-btn-icon" />
           <span>导出备份</span>
         </button>
-        <button class="backup-btn" title="从 JSON 文件恢复数据" @click="triggerFileInput">
+        <button class="backup-btn" data-tooltip="从 JSON 文件恢复数据" @click="triggerFileInput">
           <Upload class="backup-btn-icon" />
           <span>导入备份</span>
         </button>

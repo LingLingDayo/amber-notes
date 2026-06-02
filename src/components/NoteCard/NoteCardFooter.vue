@@ -99,7 +99,7 @@ const deleteSelf = async () => {
     <div class="card-actions">
       <!-- 换色调色盘 -->
       <div class="action-popover-wrapper">
-        <button class="action-btn" title="更改颜色" @click="showColorPicker = !showColorPicker; showFolderPicker = false">
+        <button class="action-btn" data-tooltip="更改颜色" @click="showColorPicker = !showColorPicker; showFolderPicker = false">
           <Palette class="action-icon" />
         </button>
         
@@ -109,7 +109,7 @@ const deleteSelf = async () => {
             :key="key"
             class="color-dot"
             :style="{ background: preset.lightBg, border: `1px solid ${preset.lightBorder}` }"
-            :title="preset.name"
+            :data-tooltip="preset.name"
             @click="changeColor(key.toString())"
           >
             <Check v-if="note.color === key" class="dot-check-icon" />
@@ -119,7 +119,7 @@ const deleteSelf = async () => {
 
       <!-- 移动分类 -->
       <div class="action-popover-wrapper">
-        <button class="action-btn" title="移动分类" @click="showFolderPicker = !showFolderPicker; showColorPicker = false">
+        <button class="action-btn" data-tooltip="移动分类" @click="showFolderPicker = !showFolderPicker; showColorPicker = false">
           <FolderInput class="action-icon" />
         </button>
         
@@ -147,12 +147,12 @@ const deleteSelf = async () => {
       </div>
 
       <!-- 复制 -->
-      <button class="action-btn" title="复制" @click="copyNoteContent">
+      <button class="action-btn" data-tooltip="复制" @click="copyNoteContent">
         <Copy class="action-icon" />
       </button>
 
       <!-- 删除按钮 -->
-      <button class="action-btn delete" title="删除便签" @click="deleteSelf">
+      <button class="action-btn delete" data-tooltip="删除便签" @click="deleteSelf">
         <Trash2 class="action-icon" />
       </button>
     </div>

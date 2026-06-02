@@ -76,7 +76,7 @@ defineExpose({
   <div class="tags-editor" @click.stop>
     <div v-for="(tag, idx) in tags" :key="idx" class="edit-tag-badge">
       <span>{{ tag }}</span>
-      <button class="delete-tag-btn" title="删除标签" @click.stop="removeTag(idx)">×</button>
+      <button class="delete-tag-btn" data-tooltip="删除标签" @click.stop="removeTag(idx)">×</button>
     </div>
     <div class="tag-input-wrapper">
       <input 
@@ -94,7 +94,7 @@ defineExpose({
         type="button" 
         @mousedown.prevent 
         @click="toggleDropdown"
-        title="选择已有标签"
+        data-tooltip="选择已有标签"
       >
         <svg class="arrow-icon" :class="{ open: showDropdown }" viewBox="0 0 24 24" width="12" height="12">
           <path fill="currentColor" d="M7 10l5 5 5-5z" />
@@ -111,7 +111,7 @@ defineExpose({
           :key="tag" 
           class="dropdown-item" 
           :class="{ selected: tags.includes(tag) }"
-          :title="tag"
+          :data-tooltip="tag"
           @click="selectTag(tag)"
         >
           <span class="tag-text">{{ tag }}</span>

@@ -180,7 +180,7 @@ const clearSearch = () => {
       <div class="search-target-wrapper" @click.stop>
         <button 
           class="target-trigger-btn" 
-          title="搜索范围"
+          data-tooltip="搜索范围"
           @click="showTargetPopover = !showTargetPopover"
         >
           <span>{{ currentTargetLabel }}</span>
@@ -209,7 +209,7 @@ const clearSearch = () => {
       <!-- 切换主题 -->
       <button 
         class="icon-btn theme-toggle" 
-        title="切换主题" 
+        data-tooltip="切换主题" 
         @click="toggleTheme"
       >
         <Sun v-if="isDark" class="btn-icon" />
@@ -220,7 +220,7 @@ const clearSearch = () => {
       <div class="action-popover-wrapper">
         <button 
           class="icon-btn" 
-          title="排序方式" 
+          data-tooltip="排序方式" 
           @click.stop="showSortPopover = !showSortPopover"
         >
           <ArrowUpDown class="btn-icon" />
@@ -267,7 +267,7 @@ const clearSearch = () => {
       <button 
         class="icon-btn danger" 
         :disabled="store.filteredNotes.length === 0"
-        title="清空当前便签" 
+        data-tooltip="清空当前便签" 
         @click="handleClear"
       >
         <Trash2 class="btn-icon" />
@@ -276,7 +276,7 @@ const clearSearch = () => {
       <!-- 新建便签 -->
       <button 
         class="primary-btn" 
-        title="新建便签" 
+        data-tooltip="新建便签" 
         @click="handleAddNote"
       >
         <Plus class="btn-icon-plus" />
