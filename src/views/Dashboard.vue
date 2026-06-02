@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted } from 'vue';
 import { useStickyNotesStore } from '../stores/stickyNotes';
-import CategorySidebar from '../components/CategorySidebar.vue';
-import ActionBar from '../components/ActionBar.vue';
-import NoteGrid from '../components/NoteGrid.vue';
-import Toast from '../components/Toast.vue';
-import ConfirmModal from '../components/ConfirmModal.vue';
+import CategorySidebar from '../modules/CategorySidebar.vue';
+import ActionBar from '../modules/ActionBar.vue';
+import NoteGrid from '../modules/NoteGrid.vue';
+import Toast from '../modules/Toast.vue';
+import ConfirmModal from '../modules/ConfirmModal.vue';
 
 const store = useStickyNotesStore();
 
