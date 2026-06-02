@@ -28,8 +28,18 @@ const emit = defineEmits<{
     <Pin class="pin-icon" />
   </button>
 
+  <!-- 没有标题且只读时，编辑按钮作为绝对定位元素在右上角展示 -->
+  <button 
+    v-if="!isEditing && !note.title" 
+    class="edit-trigger-btn absolute-edit-btn" 
+    data-tooltip="编辑便签"
+    @click.stop="emit('enter-edit')"
+  >
+    <Edit2 class="edit-icon" />
+  </button>
+
   <!-- 卡片头部 (标题 / 编辑态) -->
-  <div class="card-header">
+  <div v-if="isEditing || note.title" class="card-header">
     <input 
       v-if="isEditing"
       v-model="title"
@@ -40,7 +50,6 @@ const emit = defineEmits<{
       @keyup.esc="emit('cancel-edit')"
     />
     <h3 v-else-if="note.title" class="card-title">{{ note.title }}</h3>
-    <div v-else class="title-placeholder"></div>
     
     <button 
       v-if="!isEditing" 
@@ -104,10 +113,6 @@ const emit = defineEmits<{
   flex: 1;
 }
 
-.title-placeholder {
-  flex: 1;
-}
-
 .title-input {
   flex: 1;
   background: var(--input-bg);
@@ -149,5 +154,13 @@ const emit = defineEmits<{
     width: 13px;
     height: 13px;
   }
+}
+
+.absolute-edit-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  margin-left: 0;
+  z-index: 2;
 }
 </style>
