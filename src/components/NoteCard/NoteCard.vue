@@ -237,7 +237,7 @@ onMounted(() => {
   border-radius: $radius-xl;
   padding: 18px 20px 14px 20px;
   position: relative;
-  min-height: 160px;
+  min-height: 90px;
   max-height: 320px;
   user-select: none;
   cursor: pointer;

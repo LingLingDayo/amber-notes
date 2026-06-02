@@ -62,7 +62,7 @@ watch(() => props.isEditing, async (newVal) => {
 .card-body {
   flex: 1;
   overflow-y: auto;
-  min-height: 60px;
+  min-height: 32px;
   padding-top: 4px;
   padding-bottom: 8px;
 }
@@ -80,6 +80,8 @@ watch(() => props.isEditing, async (newVal) => {
   width: 100%;
   height: 100%;
   min-height: 100px;
+  max-height: 260px;
+  overflow-y: auto;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
   border-radius: 8px;
