@@ -1,4 +1,4 @@
-# 📌 uTools 智能毛玻璃便签 (Sticky Notes)
+# 📌 uTools 拾光便签 (TimeNotes)
 
 > 基于 **Vue 3 + TypeScript + Pinia + Vue Router + Sass** 构建的高颜值、生产力工具型 uTools 便签插件。
 >
