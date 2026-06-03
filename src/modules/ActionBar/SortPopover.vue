@@ -214,7 +214,7 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 999px) {
+@media (max-width: 1049px) {
   .icon-btn {
     width: 34px;
     height: 34px;

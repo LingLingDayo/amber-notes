@@ -318,7 +318,7 @@ const getNoteCount = (categoryId: string) => {
   }
 }
 
-@media (max-width: 999px) {
+@media (max-width: 1049px) {
   .sidebar-menu {
     padding: 10px 8px;
     gap: 4px;

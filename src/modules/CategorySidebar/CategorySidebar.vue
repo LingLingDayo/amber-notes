@@ -226,7 +226,7 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 999px) {
+@media (max-width: 1049px) {
   .sidebar-header {
     padding: 16px;
     gap: 8px;

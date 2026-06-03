@@ -221,7 +221,7 @@ const handleAddNote = () => {
   }
 }
 
-@media (max-width: 999px) {
+@media (max-width: 1049px) {
   .action-bar-container {
     padding: 12px 16px;
     gap: 12px;

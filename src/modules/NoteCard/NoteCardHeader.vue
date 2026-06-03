@@ -152,7 +152,7 @@ const emit = defineEmits<{
   z-index: 2;
 }
 
-@media (max-width: 999px) {
+@media (max-width: 1049px) {
   .absolute-edit-btn {
     top: 10px;
     right: 12px;
