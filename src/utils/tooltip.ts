@@ -50,7 +50,7 @@ export function initTooltip() {
       if (currentTarget !== target) return;
       el.classList.add('show');
       updatePosition(target, el);
-    }, 120);
+    }, 550);
   });
 
   document.addEventListener('mouseout', (e) => {
