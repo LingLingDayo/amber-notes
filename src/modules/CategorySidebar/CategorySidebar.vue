@@ -176,7 +176,6 @@ onUnmounted(() => {
   gap: 8px;
   margin-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 12px;
 }
 
 .hidden-file-input {
@@ -239,8 +238,7 @@ onUnmounted(() => {
 
   .backup-section {
     margin-top: 8px;
-    padding-top: 8px;
-    gap: 4px;
+    gap: 6px;
   }
 }
 </style>
