@@ -25,3 +25,4 @@ dist-ssr
 .temp/
 AGENTS.md
 docs/superpowers
+.utools
