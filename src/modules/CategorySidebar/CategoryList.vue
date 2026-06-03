@@ -135,7 +135,7 @@ const getNoteCount = (categoryId: string) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 42px;
+  height: 40px;
   padding: 0 14px;
   padding-right: 10px;
   border-radius: 10px;
@@ -250,9 +250,17 @@ const getNoteCount = (categoryId: string) => {
 }
 
 .action-btn {
-  padding: 4px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 6px;
   color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
   
   &:hover {
     background: var(--item-hover-bg);

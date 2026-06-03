@@ -230,12 +230,17 @@ const deleteSelf = async () => {
 }
 
 .action-btn {
-  padding: 4px;
+  width: 20px;
+  height: 20px;
   border-radius: 6px;
   color: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
 
   &:hover {
     background: var(--card-btn-hover-bg);

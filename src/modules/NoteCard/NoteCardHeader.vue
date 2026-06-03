@@ -124,7 +124,7 @@ const emit = defineEmits<{
 
 .edit-trigger-btn {
   opacity: 0;
-  padding: 4px;
+  padding: 6px;
   border-radius: 6px;
   color: inherit;
   margin-left: 6px;
