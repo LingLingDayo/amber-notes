@@ -80,7 +80,7 @@ const cancelEdit = () => {
 
 // 双击粘贴逻辑
 const handleDoubleClick = () => {
-  if (isEditing.value || props.note.isDeleted) return; // 如果在编辑中或已删除，不触发双击粘贴
+  if (isEditing.value) return; // 如果在编辑中，不触发双击粘贴
   store.handlePasteNote(props.note.content);
 };
 

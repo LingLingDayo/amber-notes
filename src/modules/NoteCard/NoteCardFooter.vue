@@ -116,6 +116,11 @@ const deleteSelf = async () => {
         <Folder class="action-icon" />
       </div>
 
+      <!-- 复制 -->
+      <button class="action-btn" data-tooltip="复制" @click="copyNoteContent">
+        <Copy class="action-icon" />
+      </button>
+
       <!-- 恢复 -->
       <button class="action-btn" data-tooltip="恢复便签" @click="store.restoreNote(note.id)">
         <RotateCcw class="action-icon" />
