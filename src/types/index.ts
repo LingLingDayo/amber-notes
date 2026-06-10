@@ -2,6 +2,7 @@ export interface Category {
   id: string;
   name: string;
   createdAt: number;
+  parentId?: string;
 }
 
 export interface Note {

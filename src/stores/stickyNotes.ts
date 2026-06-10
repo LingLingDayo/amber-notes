@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { Category, Note } from '@type';
-import { storage, pasteTextToCursor, downloadOrWriteFile } from '@utils/storage';
+import { storage, pasteTextToCursor } from '@utils/storage';
 import { COLOR_PRESETS } from './colorPresets';
+import * as helpers from './stickyNotesHelpers';
 
 export { COLOR_PRESETS };
 
@@ -11,29 +12,163 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   const categoryOrder = ref<string[]>([]);
   const notes = ref<Note[]>([]);
   const currentCategoryId = ref<string>('all');
+  const collapsedCategoryIds = ref<string[]>([]);
+  const addingSubParentId = ref<string | null>(null);
+  const newSubCategoryName = ref('');
 
   const saveCategoryOrder = () => {
     storage.setItem('sticky_notes_category_order', JSON.stringify(categoryOrder.value));
   };
 
+  const saveCollapsedCategories = () => {
+    storage.setItem('sticky_notes_collapsed_categories', JSON.stringify(collapsedCategoryIds.value));
+  };
+
+  const toggleCategoryCollapse = (id: string) => {
+    const idx = collapsedCategoryIds.value.indexOf(id);
+    if (idx === -1) {
+      collapsedCategoryIds.value.push(id);
+    } else {
+      collapsedCategoryIds.value.splice(idx, 1);
+    }
+    saveCollapsedCategories();
+  };
+
+  const isCategoryCollapsed = (id: string) => {
+    return collapsedCategoryIds.value.includes(id);
+  };
+
+  const getCategoryDescendants = (categoryId: string): Set<string> => {
+    const descendants = new Set<string>();
+    const childrenMap = new Map<string, string[]>();
+
+    categories.value.forEach(c => {
+      if (c.parentId) {
+        if (!childrenMap.has(c.parentId)) {
+          childrenMap.set(c.parentId, []);
+        }
+        childrenMap.get(c.parentId)!.push(c.id);
+      }
+    });
+
+    const queue = [categoryId];
+    let head = 0;
+    while (head < queue.length) {
+      const current = queue[head++];
+      const children = childrenMap.get(current) || [];
+      children.forEach(childId => {
+        if (!descendants.has(childId)) {
+          descendants.add(childId);
+          queue.push(childId);
+        }
+      });
+    }
+    return descendants;
+  };
+
+
+
   const orderedCategories = computed(() => {
     const catMap = new Map(categories.value.map(c => [c.id, c]));
-    return categoryOrder.value.map(id => {
-      if (id === 'all') {
-        return { id: 'all', name: '全部便签', isSystem: true };
+    const childrenMap = new Map<string, Category[]>();
+    const rootCategories: Category[] = [];
+
+    categories.value.forEach(c => {
+      if (c.parentId && catMap.has(c.parentId)) {
+        if (!childrenMap.has(c.parentId)) {
+          childrenMap.set(c.parentId, []);
+        }
+        childrenMap.get(c.parentId)!.push(c);
+      } else {
+        rootCategories.push(c);
       }
-      const cat = catMap.get(id);
-      return cat ? { ...cat, isSystem: false } : null;
-    }).filter(Boolean) as Array<Category & { isSystem: boolean }>;
+    });
+
+    const getOrderIndex = (id: string) => {
+      const idx = categoryOrder.value.indexOf(id);
+      return idx === -1 ? Infinity : idx;
+    };
+    const sortFn = (a: Category, b: Category) => {
+      return getOrderIndex(a.id) - getOrderIndex(b.id);
+    };
+
+    rootCategories.sort(sortFn);
+    childrenMap.forEach(list => list.sort(sortFn));
+
+    const result: Array<Category & { isSystem: boolean; level: number; hasChildren: boolean; isCollapsed: boolean; isVirtualAdd?: boolean }> = [];
+
+    result.push({
+      id: 'all',
+      name: '全部便签',
+      createdAt: 0,
+      isSystem: true,
+      level: 0,
+      hasChildren: false,
+      isCollapsed: false
+    });
+
+    const traverse = (cat: Category, level: number) => {
+      const children = childrenMap.get(cat.id) || [];
+      const hasChildren = children.length > 0;
+      const isCollapsed = collapsedCategoryIds.value.includes(cat.id);
+
+      result.push({
+        ...cat,
+        isSystem: false,
+        level,
+        hasChildren,
+        isCollapsed
+      });
+
+      // If this category is currently adding a sub-category, insert a virtual element at the start of its list of children
+      if (addingSubParentId.value === cat.id && !isCollapsed) {
+        result.push({
+          id: `sub-add-${cat.id}`,
+          name: '',
+          createdAt: Date.now(),
+          parentId: cat.id,
+          isSystem: false,
+          level: level + 1,
+          hasChildren: false,
+          isCollapsed: false,
+          isVirtualAdd: true
+        });
+      }
+
+      if (hasChildren && !isCollapsed) {
+        children.forEach(child => {
+          traverse(child, level + 1);
+        });
+      }
+    };
+
+    rootCategories.forEach(cat => {
+      traverse(cat, 0);
+    });
+
+    return result;
   });
 
   const reorderCategories = (fromIndex: number, toIndex: number) => {
+    const fromCat = orderedCategories.value[fromIndex];
+    const toCat = orderedCategories.value[toIndex];
+    if (!fromCat || !toCat) return;
+
+    const fromId = fromCat.id;
+    const toId = toCat.id;
+
     const order = [...categoryOrder.value];
-    const [moved] = order.splice(fromIndex, 1);
-    order.splice(toIndex, 0, moved);
-    categoryOrder.value = order;
-    saveCategoryOrder();
+    const fromIdx = order.indexOf(fromId);
+    const toIdx = order.indexOf(toId);
+
+    if (fromIdx !== -1 && toIdx !== -1) {
+      const [moved] = order.splice(fromIdx, 1);
+      order.splice(toIdx, 0, moved);
+      categoryOrder.value = order;
+      saveCategoryOrder();
+    }
   };
+
   const searchQuery = ref<string>('');
   const searchTarget = ref<Array<'all' | 'title' | 'content' | 'tag'>>(['all']);
   const sortMode = ref<'date' | 'title' | 'tag' | 'custom'>('date');
@@ -98,6 +233,15 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
           { id: '3', name: '常用模版', createdAt: Date.now() - 2000 }
         ];
         saveCategories();
+      }
+
+      const storedCollapsed = storage.getItem('sticky_notes_collapsed_categories');
+      if (storedCollapsed) {
+        try {
+          collapsedCategoryIds.value = JSON.parse(storedCollapsed);
+        } catch (e) {
+          console.error(e);
+        }
       }
 
       // 初始化或加载分类顺序
@@ -208,12 +352,13 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   };
 
   // --- 分类操作 ---
-  const addCategory = (name: string) => {
+  const addCategory = (name: string, parentId?: string) => {
     if (!name.trim()) return;
     const newCategory: Category = {
       id: Date.now().toString(),
       name: name.trim(),
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      parentId
     };
     categories.value.push(newCategory);
     saveCategories();
@@ -227,7 +372,13 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   };
 
   const deleteCategory = (id: string) => {
-    categories.value = categories.value.filter(c => c.id !== id);
+    const targetParentId = categories.value.find(c => c.id === id)?.parentId;
+    categories.value = categories.value.map(c => {
+      if (c.parentId === id) {
+        return { ...c, parentId: targetParentId };
+      }
+      return c;
+    }).filter(c => c.id !== id);
     saveCategories();
     
     // 从分类顺序中移除
@@ -235,7 +386,6 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
     saveCategoryOrder();
     
     // 删除分类时，该分类下的便签会变成“未分类”或者直接删除？
-    // 这里我们将该分类下的便签的 categoryId 设为 'all' 或者是直接移至未分类，但为了用户体验，我们把该分类下便签的 categoryId 改成 'uncategorized'
     notes.value = notes.value.map(n => {
       if (n.categoryId === id) {
         return { ...n, categoryId: 'uncategorized' };
@@ -259,9 +409,10 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
     }
   };
 
+
+
   // --- 便签操作 ---
   const addNote = (categoryId: string, content = '', title = '', color = 'yellow') => {
-    // 如果 categoryId 是 'all' 或者是 'trash'，则默认创建在第一个分类下，如果没有分类，创建在 'uncategorized' 下
     let targetCategoryId = categoryId;
     if (categoryId === 'all' || categoryId === 'trash') {
       targetCategoryId = categories.value.length > 0 ? categories.value[0].id : 'uncategorized';
@@ -351,8 +502,9 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
       clearTrash();
       return;
     } else {
+      const descendants = getCategoryDescendants(categoryId);
       notes.value.forEach(n => {
-        if (n.categoryId === categoryId && !n.isDeleted) {
+        if ((n.categoryId === categoryId || descendants.has(n.categoryId)) && !n.isDeleted) {
           n.isDeleted = true;
           n.deletedAt = Date.now();
           n.isPinned = false;
@@ -372,7 +524,8 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
     } else {
       result = result.filter(n => n.isDeleted !== true);
       if (currentCategoryId.value !== 'all') {
-        result = result.filter(n => n.categoryId === currentCategoryId.value);
+        const descendants = getCategoryDescendants(currentCategoryId.value);
+        result = result.filter(n => n.categoryId === currentCategoryId.value || descendants.has(n.categoryId));
       }
     }
 
@@ -417,7 +570,6 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
         }
         return sortOrder.value === 'asc' ? a.updatedAt - b.updatedAt : b.updatedAt - a.updatedAt;
       } else if (sortMode.value === 'tag') {
-        // 按标签排序：提取首个标签（按拼音首字母排序）
         const getRepresentTag = (note: Note): string => {
           if (!note.tags || note.tags.length === 0) return '';
           const sorted = [...note.tags].sort((t1, t2) => t1.localeCompare(t2, 'zh'));
@@ -427,26 +579,22 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
         const tagA = getRepresentTag(a);
         const tagB = getRepresentTag(b);
 
-        // 无标签的排在有标签的后面
         if (!tagA && tagB) return 1;
         if (tagA && !tagB) return -1;
         if (!tagA && !tagB) {
-          return b.updatedAt - a.updatedAt; // 都无标签时，按更新时间倒序
+          return b.updatedAt - a.updatedAt;
         }
 
         const cmp = tagA.localeCompare(tagB, 'zh');
         if (cmp !== 0) {
           return sortOrder.value === 'asc' ? cmp : -cmp;
         }
-        // 同一标签下，按更新时间排序（与当前排序方向一致）
         return sortOrder.value === 'asc' ? a.updatedAt - b.updatedAt : b.updatedAt - a.updatedAt;
       } else if (sortMode.value === 'custom') {
-        // 自定义排序：保持在原 notes 数组中的相对顺序
         const indexA = notes.value.findIndex(n => n.id === a.id);
         const indexB = notes.value.findIndex(n => n.id === b.id);
         return indexA - indexB;
       } else {
-        // 默认按日期更新时间倒序
         return sortOrder.value === 'desc' 
           ? b.updatedAt - a.updatedAt 
           : a.updatedAt - b.updatedAt;
@@ -456,124 +604,24 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
 
   // --- 数据导入与导出 (开发者效率与安全增强) ---
   const exportBackup = () => {
-    const backupData = {
-      version: '1.0.0',
-      timestamp: Date.now(),
-      categories: categories.value,
-      notes: notes.value
-    };
-    
-    const jsonStr = JSON.stringify(backupData, null, 2);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const now = new Date();
-    const timeStr = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${pad(now.getHours())}.${pad(now.getMinutes())}.${pad(now.getSeconds())}`;
-    const filename = `sticky-notes-backup-${timeStr}.json`;
-    
-    const result = downloadOrWriteFile(jsonStr, filename, 'application/json');
-    if (result === 'success') {
-      showToast('备份已成功导出', 'success');
-    } else if (result === 'canceled') {
-      showToast('已取消备份导出', 'info');
-    } else {
-      showToast('备份已导出为 JSON 文件下载', 'success');
-    }
+    helpers.exportBackup(categories.value, notes.value, showToast);
   };
 
   const importBackup = (jsonStr: string): boolean => {
-    try {
-      const data = JSON.parse(jsonStr);
-      
-      // 字段校验，防止损坏的 JSON 或恶意输入导致运行崩溃 (安全增强)
-      if (!data || typeof data !== 'object') return false;
-      if (!Array.isArray(data.categories) || !Array.isArray(data.notes)) return false;
-
-      // 验证并过滤分类
-      const validCategories = data.categories.filter((c: any) => {
-        return c && typeof c.id === 'string' && typeof c.name === 'string';
-      });
-
-      // 验证并过滤便签
-      const validNotes = data.notes.filter((n: any) => {
-        return n && typeof n.id === 'string' && 
-               typeof n.categoryId === 'string' && 
-               typeof n.content === 'string' &&
-               typeof n.color === 'string';
-      });
-
-      if (validCategories.length === 0 && validNotes.length === 0) {
-        showToast('导入失败：备份文件不包含有效的分类或便签数据', 'error');
-        return false;
-      }
-
-      // 合并逻辑：如果导入的 ID 与现有重复，以导入的覆盖现有的，否则新增
-      const catMap = new Map(categories.value.map(c => [c.id, c]));
-      validCategories.forEach((c: any) => {
-        catMap.set(c.id, {
-          id: c.id,
-          name: c.name,
-          createdAt: c.createdAt || Date.now()
-        });
-      });
-      categories.value = Array.from(catMap.values());
-
-      const noteMap = new Map(notes.value.map(n => [n.id, n]));
-      validNotes.forEach((n: any) => {
-        noteMap.set(n.id, {
-          id: n.id,
-          categoryId: n.categoryId,
-          title: n.title || '',
-          content: n.content,
-          color: n.color,
-          isPinned: !!n.isPinned,
-          createdAt: n.createdAt || Date.now(),
-          updatedAt: n.updatedAt || Date.now(),
-          tags: Array.isArray(n.tags) ? n.tags.filter((t: any) => typeof t === 'string') : []
-        });
-      });
-      notes.value = Array.from(noteMap.values());
-
-      saveCategories();
-      saveNotes();
-
-      // 重建并保存导入后的分类顺序
-      const currentIds = new Set(categories.value.map(c => c.id));
-      currentIds.add('all');
-      let newOrder = categoryOrder.value.filter(id => currentIds.has(id));
-      categories.value.forEach(c => {
-        if (!newOrder.includes(c.id)) {
-          newOrder.push(c.id);
-        }
-      });
-      if (!newOrder.includes('all')) {
-        newOrder.unshift('all');
-      }
-      categoryOrder.value = newOrder;
-      saveCategoryOrder();
-
-      showToast(`成功导入 ${validCategories.length} 个分类和 ${validNotes.length} 张便签！`, 'success');
-      return true;
-    } catch (e) {
-      console.error('Import backup failed:', e);
-      showToast('导入失败：JSON 文件解析错误', 'error');
-      return false;
-    }
+    return helpers.importBackup(
+      jsonStr,
+      categories,
+      notes,
+      categoryOrder,
+      saveCategories,
+      saveNotes,
+      saveCategoryOrder,
+      showToast
+    );
   };
 
-  // 导出单个便签为 TXT 文件
   const exportSingleNoteAsTxt = (note: Note) => {
-    const title = note.title || '无标题便签';
-    const tagsStr = note.tags && note.tags.length > 0 ? `标签: ${note.tags.map(t => `#${t}`).join(' ')}\n` : '';
-    const content = `${title}\n创建时间: ${new Date(note.createdAt).toLocaleString()}\n${tagsStr}---------------------------\n\n${note.content}`;
-    const filename = `${title.replace(/[\\/:*?"<>|]/g, '_')}.txt`;
-    
-    const result = downloadOrWriteFile(content, filename, 'text/plain;charset=utf-8');
-    if (result === 'success') {
-      showToast('便签已成功导出', 'success');
-    } else if (result === 'canceled') {
-      showToast('已取消导出', 'info');
-    } else {
-      showToast('便签已导出为 TXT 文本下载', 'success');
-    }
+    helpers.exportSingleNoteAsTxt(note, showToast);
   };
 
   // --- 粘贴与复制 ---
@@ -598,13 +646,12 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
       }
     } else {
       sortMode.value = mode;
-      // 切换新模式时，设置其默认排序方向
       if (mode === 'date') {
-        sortOrder.value = 'desc'; // 默认按最新优先
+        sortOrder.value = 'desc';
       } else if (mode === 'title') {
-        sortOrder.value = 'asc'; // 默认按首字母升序
+        sortOrder.value = 'asc';
       } else if (mode === 'tag') {
-        sortOrder.value = 'asc'; // 默认按标签首字母升序
+        sortOrder.value = 'asc';
       }
     }
     storage.setItem('sticky_notes_sort_mode', sortMode.value);
@@ -634,69 +681,27 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
     }
   };
 
-  // --- 仅开发环境可用的重置方法 ---
   const devResetNotes = () => {
-    notes.value = [
-      {
-        id: 'n1',
-        categoryId: '1',
-        title: '✨ 欢迎使用拾光便签',
-        content: '👋 你好！这是一个基于 uTools 平台开发的便签插件。在这里你可以分类整理你的日常工作备忘、常用快捷回复和奇思妙想。',
-        color: 'yellow',
-        isPinned: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        tags: ['欢迎', '指南']
-      },
-      {
-        id: 'n2',
-        categoryId: '1',
-        title: '🚀 核心特色功能：双击粘贴',
-        content: '双击本便签卡片，本插件将自动隐藏并把便签内容直接粘贴到你的光标输入位置！非常适合存储客服话术、代码模板和常用邮箱地址等。',
-        color: 'blue',
-        isPinned: false,
-        createdAt: Date.now() - 1000,
-        updatedAt: Date.now() - 1000,
-        tags: ['特色', '效率']
-      },
-      {
-        id: 'n3',
-        categoryId: '2',
-        title: '💡 快捷操作指南',
-        content: '1. 点击卡片右上角大头针可以置顶便签。\n2. 点击下方调色盘图标一键切换便签主题颜色。\n3. 右侧工具栏支持一键搜索、清空分类或在当前分类下极速创建便签。',
-        color: 'green',
-        isPinned: false,
-        createdAt: Date.now() - 2000,
-        updatedAt: Date.now() - 2000,
-        tags: ['操作', '快速开始']
-      }
-    ];
-    saveNotes();
-    showToast('已重置所有便签(Notes)', 'success');
-    console.log('StickyNotes Dev: 已重置所有便签(Notes)为默认便签。');
+    helpers.devResetNotes(notes, saveNotes, showToast);
   };
 
   const devResetTags = () => {
-    notes.value = notes.value.map(n => ({ ...n, tags: [] }));
-    saveNotes();
-    showToast('已重置所有便签的标签(Tags)', 'success');
-    console.log('StickyNotes Dev: 已清空所有便签的标签(Tags)。');
+    helpers.devResetTags(notes, saveNotes, showToast);
   };
 
   const devResetAllData = () => {
-    storage.removeItem('sticky_notes_categories');
-    storage.removeItem('sticky_notes_category_order');
-    storage.removeItem('sticky_notes_notes');
-    storage.removeItem('sticky_notes_grid_columns');
-    gridColumns.value = 'auto';
-    loadData();
-    showToast('已重置所有数据(便签和分类)', 'success');
-    console.log('StickyNotes Dev: 已重置所有便签与分类数据。');
+    helpers.devResetAllData(loadData, gridColumns, showToast);
   };
 
   return {
     categories,
     categoryOrder,
+    collapsedCategoryIds,
+    addingSubParentId,
+    newSubCategoryName,
+    toggleCategoryCollapse,
+    isCategoryCollapsed,
+    getCategoryDescendants,
     orderedCategories,
     saveCategoryOrder,
     reorderCategories,

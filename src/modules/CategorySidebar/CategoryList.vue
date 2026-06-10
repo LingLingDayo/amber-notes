@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, nextTick } from 'vue';
 import { useStickyNotesStore } from '@stores/stickyNotes';
-import { Folder, Edit3, Trash2, Check } from 'lucide-vue-next';
+import { Folder, Edit3, Trash2, Check, ChevronDown, ChevronRight, Plus } from 'lucide-vue-next';
 import { isUTools } from '@/utils/storage';
 
 const store = useStickyNotesStore();
@@ -11,8 +11,14 @@ const editingId = ref<string | null>(null);
 const editCategoryName = ref('');
 const editInputRef = ref<HTMLInputElement | null>(null);
 
+const subAddInputRef = ref<HTMLInputElement | null>(null);
+
 const setEditInputRef = (el: any) => {
   editInputRef.value = el as HTMLInputElement | null;
+};
+
+const setSubAddInputRef = (el: any) => {
+  subAddInputRef.value = el as HTMLInputElement | null;
 };
 
 // 开启编辑
@@ -48,7 +54,7 @@ const submitEdit = (id: string) => {
 const confirmDelete = async (id: string, name: string) => {
   const ok = await store.askConfirm(
     '确认删除分类',
-    `确定要删除分类 "${name}" 吗？该分类下的便签不会被删除，将变为未分类状态。`
+    `确定要删除分类 "${name}" 吗？该分类下的子分类与便签不会被删除，将分别自动上移与变为未分类状态。`
   );
   if (ok) {
     store.deleteCategory(id);
@@ -61,7 +67,8 @@ const getNoteCount = (categoryId: string) => {
   if (categoryId === 'all') {
     return store.notes.filter(n => n.isDeleted !== true).length;
   }
-  return store.notes.filter(n => n.categoryId === categoryId && n.isDeleted !== true).length;
+  const descendants = store.getCategoryDescendants(categoryId);
+  return store.notes.filter(n => (n.categoryId === categoryId || descendants.has(n.categoryId)) && n.isDeleted !== true).length;
 };
 
 // 拖动排序相关的状态与方法
@@ -69,6 +76,11 @@ const draggedIndex = ref<number | null>(null);
 let lastSwapTime = 0;
 
 const onDragStart = (event: DragEvent, index: number) => {
+  const cat = store.orderedCategories[index];
+  if (cat && (cat.isSystem || cat.isVirtualAdd)) {
+    event.preventDefault();
+    return;
+  }
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', index.toString());
@@ -81,6 +93,13 @@ const onDragStart = (event: DragEvent, index: number) => {
 
 const onDragOver = (event: DragEvent, index: number) => {
   if (draggedIndex.value === null || draggedIndex.value === index) return;
+
+  const draggedCat = store.orderedCategories[draggedIndex.value];
+  const targetCat = store.orderedCategories[index];
+  if (!draggedCat || !targetCat) return;
+  if (draggedCat.isSystem || targetCat.isSystem) return;
+  if (draggedCat.isVirtualAdd || targetCat.isVirtualAdd) return;
+  if (draggedCat.parentId !== targetCat.parentId) return;
 
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
   const clientY = event.clientY;
@@ -107,6 +126,37 @@ const onDragOver = (event: DragEvent, index: number) => {
 const onDragEnd = () => {
   draggedIndex.value = null;
 };
+
+// 子分类增加逻辑
+const startAddSub = async (parentId: string) => {
+  store.addingSubParentId = parentId;
+  store.newSubCategoryName = '';
+  
+  // 展开父分类
+  if (store.collapsedCategoryIds.includes(parentId)) {
+    store.toggleCategoryCollapse(parentId);
+  }
+  
+  await nextTick();
+  if (subAddInputRef.value) {
+    subAddInputRef.value.focus();
+  }
+};
+
+const cancelAddSub = () => {
+  store.addingSubParentId = null;
+  store.newSubCategoryName = '';
+};
+
+const submitAddSub = (parentId?: string) => {
+  const name = store.newSubCategoryName.trim();
+  if (name) {
+    store.addCategory(name, parentId);
+    store.showToast(`已成功创建子分类 "${name}"`);
+  }
+  cancelAddSub();
+};
+
 </script>
 
 <template>
@@ -122,17 +172,29 @@ const onDragEnd = () => {
         class="menu-item"
         :class="{ 
           active: store.currentCategoryId === cat.id,
-          'has-actions': !cat.isSystem,
+          'has-actions': !cat.isSystem && !cat.isVirtualAdd,
           'dragging': draggedIndex === index
         }"
-        :draggable="editingId !== cat.id"
-        @click="store.currentCategoryId = cat.id"
+        :draggable="editingId !== cat.id && !cat.isVirtualAdd"
+        :style="{ '--item-level': cat.level || 0 }"
+        @click="store.currentCategoryId = cat.isVirtualAdd ? store.currentCategoryId : cat.id"
         @dragstart="onDragStart($event, index)"
         @dragover.prevent="onDragOver($event, index)"
         @dragend="onDragEnd"
       >
         <div class="active-indicator"></div>
         
+        <!-- Toggle button for subcategories -->
+        <span 
+          v-if="!cat.isSystem && cat.hasChildren"
+          class="collapse-toggle"
+          @click.stop="store.toggleCategoryCollapse(cat.id)"
+        >
+          <ChevronDown v-if="!cat.isCollapsed" class="toggle-icon" />
+          <ChevronRight v-else class="toggle-icon" />
+        </span>
+        <span v-else-if="!cat.isSystem && cat.level > 0" class="collapse-toggle-spacer"></span>
+
         <!-- 系统分类 (全部便签) -->
         <template v-if="cat.isSystem">
           <div class="item-left">
@@ -142,10 +204,27 @@ const onDragEnd = () => {
           <span class="item-badge">{{ getNoteCount('all') }}</span>
         </template>
   
-        <!-- 用户自定义分类 -->
+        <!-- 用户自定义分类 or 虚拟新增子分类 -->
         <template v-else>
+          <!-- 虚拟新增分类状态 -->
+          <div v-if="cat.isVirtualAdd" class="item-edit-wrapper" @click.stop>
+            <input 
+              :ref="setSubAddInputRef"
+              v-model="store.newSubCategoryName"
+              type="text" 
+              placeholder="子分类名称..."
+              class="item-edit-input"
+              @keyup.enter="submitAddSub(cat.parentId)"
+              @keyup.esc="cancelAddSub"
+              @blur="submitAddSub(cat.parentId)"
+            />
+            <button class="edit-btn confirm" @click="submitAddSub(cat.parentId)">
+              <Check class="btn-icon-small" />
+            </button>
+          </div>
+
           <!-- 编辑状态 -->
-          <div v-if="editingId === cat.id" class="item-edit-wrapper" @click.stop>
+          <div v-else-if="editingId === cat.id" class="item-edit-wrapper" @click.stop>
             <input 
               :ref="setEditInputRef"
               v-model="editCategoryName"
@@ -170,6 +249,11 @@ const onDragEnd = () => {
             <div class="item-right" @click.stop>
               <span class="item-badge">{{ getNoteCount(cat.id) }}</span>
               <div class="item-actions">
+                <!-- 添加子分类 -->
+                <button class="action-btn" data-tooltip="添加子分类" @click="startAddSub(cat.id)">
+                  <Plus class="action-icon" />
+                </button>
+
                 <button class="action-btn" data-tooltip="编辑分类" @click="startEdit(cat.id, cat.name)">
                   <Edit3 class="action-icon" />
                 </button>
@@ -222,7 +306,8 @@ const onDragEnd = () => {
   align-items: center;
   justify-content: space-between;
   height: 40px;
-  padding: 0 14px;
+  --level-indent: 14px;
+  padding-left: calc(14px + var(--item-level, 0) * var(--level-indent));
   padding-right: 10px;
   border-radius: 10px;
   cursor: pointer;
@@ -230,7 +315,6 @@ const onDragEnd = () => {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
   position: relative;
-  overflow: hidden;
 
   .active-indicator {
     position: absolute;
@@ -287,7 +371,7 @@ const onDragEnd = () => {
     border-style: dashed;
     box-shadow: none;
     
-    .item-badge, .item-actions, .active-indicator {
+    .item-badge, .item-actions, .active-indicator, .collapse-toggle {
       opacity: 0 !important;
     }
   }
@@ -429,7 +513,7 @@ const onDragEnd = () => {
 
   .menu-item {
     height: 36px;
-    padding: 0 10px;
+    padding-left: calc(10px + var(--item-level, 0) * 10px);
     padding-right: 6px;
   }
 

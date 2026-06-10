@@ -171,12 +171,14 @@ const deleteSelf = async () => {
               未分类
             </button>
             <button 
-              v-for="cat in store.categories" 
+              v-for="cat in store.orderedCategories.filter(c => !c.isSystem)" 
               :key="cat.id"
               class="folder-item"
+              :style="{ paddingLeft: `${(cat.level || 0) * 12 + 8}px` }"
               :class="{ active: note.categoryId === cat.id }"
               @click="moveCategory(cat.id)"
             >
+              <span v-if="cat.level > 0" style="opacity: 0.5; margin-right: 4px;">└─</span>
               {{ cat.name }}
             </button>
           </div>
