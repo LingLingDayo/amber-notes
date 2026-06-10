@@ -78,7 +78,7 @@ const handleAddNote = () => {
     <div v-if="store.filteredNotes.length === 0" class="empty-state">
       <div class="empty-illustration-wrapper">
         <SearchX v-if="store.searchQuery" class="empty-icon animate-pulse" />
-        <StickyNote v-else class="empty-icon floating" />
+        <StickyNote v-else class="empty-icon" />
       </div>
       
       <h3 class="empty-title">
@@ -144,10 +144,6 @@ const handleAddNote = () => {
   height: 64px;
   color: var(--text-muted);
   opacity: 0.35;
-
-  &.floating {
-    animation: float 4s ease-in-out infinite;
-  }
 }
 
 .empty-title {
@@ -189,18 +185,6 @@ const handleAddNote = () => {
   .btn-icon {
     width: 15px;
     height: 15px;
-  }
-}
-
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
   }
 }
 
