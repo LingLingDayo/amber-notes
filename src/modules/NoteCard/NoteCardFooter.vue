@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
-import { Palette, FolderInput, Check, Copy, Trash2, RotateCcw } from 'lucide-vue-next';
+import { Palette, FolderInput, Check, Copy, Trash2, RotateCcw, Folder } from 'lucide-vue-next';
 import { Note } from '@type';
 import { useStickyNotesStore, COLOR_PRESETS } from '@stores/stickyNotes';
 import { isUTools } from '@utils/storage';
@@ -41,6 +41,15 @@ const formattedTime = computed(() => {
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
   return `${year}.${month}.${day} ${hours}:${minutes}`;
+});
+
+// 获取原分组名称
+const originalCategoryName = computed(() => {
+  if (props.note.categoryId === 'uncategorized') {
+    return '未分类';
+  }
+  const cat = store.categories.find(c => c.id === props.note.categoryId);
+  return cat ? cat.name : '未分类';
 });
 
 // 复制便签内容逻辑
@@ -99,6 +108,14 @@ const deleteSelf = async () => {
     
     <!-- 垃圾箱中卡片的专属操作栏：永久显示 -->
     <div v-if="note.isDeleted" class="card-actions is-deleted-actions">
+      <!-- 原分组 -->
+      <div 
+        class="action-btn original-folder-btn" 
+        :data-tooltip="`原分组: ${originalCategoryName}`"
+      >
+        <Folder class="action-icon" />
+      </div>
+
       <!-- 恢复 -->
       <button class="action-btn" data-tooltip="恢复便签" @click="store.restoreNote(note.id)">
         <RotateCcw class="action-icon" />
@@ -224,6 +241,10 @@ const deleteSelf = async () => {
   font-size: 10px;
   color: inherit;
   opacity: 0.8;
+}
+
+.original-folder-btn {
+  cursor: default;
 }
 
 .updated-time {
