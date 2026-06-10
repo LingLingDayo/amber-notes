@@ -190,6 +190,9 @@ const handleAddNote = () => {
   background: var(--btn-bg);
   border: 1px solid var(--btn-border);
   color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-clip: padding-box;
 
   &:hover:not(:disabled) {
     background: var(--btn-hover-bg);
