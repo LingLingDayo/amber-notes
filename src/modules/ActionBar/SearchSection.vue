@@ -304,4 +304,18 @@ onUnmounted(() => {
     transform: translateY(0) scale(1);
   }
 }
+
+@media (max-width: 1049px) {
+  .search-wrapper {
+    height: 34px;
+    border-radius: 10px;
+    padding: 0 10px;
+  }
+
+  .target-trigger-btn {
+    height: 34px;
+    border-radius: 10px;
+    padding: 0 12px;
+  }
+}
 </style>
