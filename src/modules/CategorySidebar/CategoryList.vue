@@ -274,7 +274,7 @@ const handleCategoryDblClick = (cat: any) => {
           <ChevronDown v-if="!cat.isCollapsed" class="toggle-icon" />
           <ChevronRight v-else class="toggle-icon" />
         </span>
-        <span v-else-if="!cat.isSystem && cat.level > 0" class="collapse-toggle-spacer"></span>
+        <span v-else-if="!cat.isSystem" class="collapse-toggle-spacer"></span>
 
         <!-- 系统分类 (全部便签) -->
         <template v-if="cat.isSystem">
@@ -415,6 +415,48 @@ const handleCategoryDblClick = (cat: any) => {
     background: var(--accent-color);
     border-radius: 0 4px 4px 0;
     transition: height 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 4px;
+    margin-left: -4px;
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    z-index: 2;
+    flex-shrink: 0;
+    align-self: center;
+
+    &:hover {
+      background: var(--item-hover-bg);
+      color: var(--text-primary);
+
+      .toggle-icon {
+        transform: scale(1.12);
+      }
+    }
+
+    .toggle-icon {
+      display: block;
+      width: 12px;
+      height: 12px;
+      stroke-width: 2.5px;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+  }
+
+  .collapse-toggle-spacer {
+    width: 20px;
+    margin-right: 4px;
+    margin-left: -4px;
+    flex-shrink: 0;
+    align-self: center;
   }
 
   &:hover {
