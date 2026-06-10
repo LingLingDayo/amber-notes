@@ -160,7 +160,7 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
             id: 'n1',
             categoryId: '1',
             title: '✨ 欢迎使用拾光便签',
-            content: '👋 你好！这是一个基于 uTools 平台开发的便签插件。在这里你可以分类整理你的日常工作备忘、常用快捷回复和奇思妙想。',
+            content: '你好呀！这是一个基于 uTools 平台开发的便签插件。在这里你可以分类整理你的日常工作备忘、常用快捷回复和奇思妙想。',
             color: 'yellow',
             isPinned: true,
             createdAt: Date.now(),
@@ -261,9 +261,9 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
 
   // --- 便签操作 ---
   const addNote = (categoryId: string, content = '', title = '', color = 'yellow') => {
-    // 如果 categoryId 是 'all'，则默认创建在第一个分类下，如果没有分类，创建在 'uncategorized' 下
+    // 如果 categoryId 是 'all' 或者是 'trash'，则默认创建在第一个分类下，如果没有分类，创建在 'uncategorized' 下
     let targetCategoryId = categoryId;
-    if (categoryId === 'all') {
+    if (categoryId === 'all' || categoryId === 'trash') {
       targetCategoryId = categories.value.length > 0 ? categories.value[0].id : 'uncategorized';
     }
 
@@ -289,9 +289,43 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   };
 
   const deleteNote = (id: string) => {
-    notes.value = notes.value.filter(n => n.id !== id);
+    const note = notes.value.find(n => n.id === id);
+    if (!note) return;
+
+    if (note.isDeleted) {
+      // 已经在回收站中，物理删除
+      notes.value = notes.value.filter(n => n.id !== id);
+      showToast('已彻底删除便签', 'success');
+    } else {
+      // 逻辑删除
+      note.isDeleted = true;
+      note.deletedAt = Date.now();
+      note.isPinned = false; // 被删除后自动取消置顶
+      showToast('已将便签移至回收站', 'success');
+    }
     saveNotes();
   };
+
+  const restoreNote = (id: string) => {
+    const note = notes.value.find(n => n.id === id);
+    if (note) {
+      note.isDeleted = false;
+      delete note.deletedAt;
+      note.updatedAt = Date.now();
+      saveNotes();
+      showToast('已成功恢复便签', 'success');
+    }
+  };
+
+  const clearTrash = () => {
+    notes.value = notes.value.filter(n => n.isDeleted !== true);
+    saveNotes();
+    showToast('已清空回收站的所有便签', 'success');
+  };
+
+  const trashNotesCount = computed(() => {
+    return notes.value.filter(n => n.isDeleted === true).length;
+  });
 
   const updateNote = (id: string, fields: Partial<Omit<Note, 'id' | 'createdAt'>>, updateTimestamp = true) => {
     const note = notes.value.find(n => n.id === id);
@@ -306,9 +340,24 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
 
   const clearNotes = (categoryId: string) => {
     if (categoryId === 'all') {
-      notes.value = [];
+      notes.value.forEach(n => {
+        if (!n.isDeleted) {
+          n.isDeleted = true;
+          n.deletedAt = Date.now();
+          n.isPinned = false;
+        }
+      });
+    } else if (categoryId === 'trash') {
+      clearTrash();
+      return;
     } else {
-      notes.value = notes.value.filter(n => n.categoryId !== categoryId);
+      notes.value.forEach(n => {
+        if (n.categoryId === categoryId && !n.isDeleted) {
+          n.isDeleted = true;
+          n.deletedAt = Date.now();
+          n.isPinned = false;
+        }
+      });
     }
     saveNotes();
   };
@@ -317,9 +366,14 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   const filteredNotes = computed(() => {
     let result = notes.value;
 
-    // 1. 分类过滤
-    if (currentCategoryId.value !== 'all') {
-      result = result.filter(n => n.categoryId === currentCategoryId.value);
+    // 1. 分类与逻辑删除过滤
+    if (currentCategoryId.value === 'trash') {
+      result = result.filter(n => n.isDeleted === true);
+    } else {
+      result = result.filter(n => n.isDeleted !== true);
+      if (currentCategoryId.value !== 'all') {
+        result = result.filter(n => n.categoryId === currentCategoryId.value);
+      }
     }
 
     // 2. 搜索词过滤 (支持根据不同目标过滤)
@@ -658,6 +712,9 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
     updateCategory,
     addNote,
     deleteNote,
+    restoreNote,
+    clearTrash,
+    trashNotesCount,
     updateNote,
     clearNotes,
     handlePasteNote,

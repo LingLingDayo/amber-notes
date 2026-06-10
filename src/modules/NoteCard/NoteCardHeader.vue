@@ -20,6 +20,7 @@ const emit = defineEmits<{
 <template>
   <!-- 置顶针和大头针效果 -->
   <button 
+    v-if="!note.isDeleted"
     class="pin-btn" 
     :class="{ active: note.isPinned }"
     :data-tooltip="note.isPinned ? '取消置顶' : '置顶便签'" 
@@ -30,7 +31,7 @@ const emit = defineEmits<{
 
   <!-- 只读时，编辑按钮作为绝对定位元素在右上角展示 -->
   <button 
-    v-if="!isEditing" 
+    v-if="!isEditing && !note.isDeleted" 
     class="edit-trigger-btn absolute-edit-btn" 
     data-tooltip="编辑便签"
     @click.stop="emit('enter-edit')"

@@ -25,6 +25,9 @@ const isDark = ref(false);
 
 // 动态清空按钮的提示文字
 const clearTooltip = computed(() => {
+  if (store.currentCategoryId === 'trash') {
+    return '清空回收站';
+  }
   return store.currentCategoryId === 'all' ? '清空所有便签' : '清空当前分类便签';
 });
 
@@ -85,16 +88,27 @@ const applyTheme = (dark: boolean) => {
 
 // 清空当前分类便签
 const handleClear = async () => {
+  if (store.currentCategoryId === 'trash') {
+    const ok = await store.askConfirm(
+      '确认清空回收站吗？',
+      '⚠️ 警告：清空回收站将彻底从设备删除其中所有的便签，此操作不可逆，数据无法找回！'
+    );
+    if (ok) {
+      store.clearTrash();
+    }
+    return;
+  }
+
   const currentCat = store.categories.find(c => c.id === store.currentCategoryId);
   const catName = currentCat ? `"${currentCat.name}"` : '所有';
   
   const ok = await store.askConfirm(
-    '确认清空便签',
-    `⚠️ 警告：确定要清空 ${catName} 下的所有便签吗？此操作无法撤销。`
+    '确认删除便签',
+    `⚠️ 警告：确定要清空 ${catName} 下的所有便签吗？这些便签将被移动到回收站。`
   );
   if (ok) {
     store.clearNotes(store.currentCategoryId);
-    store.showToast('便签已清空');
+    store.showToast('已将便签移至回收站');
   }
 };
 
@@ -137,8 +151,9 @@ const handleAddNote = () => {
         @close="closePopover"
       />
 
-      <!-- 清空当前分类 -->
+      <!-- 清空当前分类 (垃圾箱分类下隐藏) -->
       <button 
+        v-if="store.currentCategoryId !== 'trash'"
         class="icon-btn danger" 
         :disabled="store.filteredNotes.length === 0"
         :data-tooltip="clearTooltip" 
@@ -147,8 +162,21 @@ const handleAddNote = () => {
         <Trash2 class="btn-icon" />
       </button>
 
+      <!-- 清空回收站 (在垃圾箱分类下显示) -->
+      <button 
+        v-if="store.currentCategoryId === 'trash'"
+        class="primary-btn danger-btn" 
+        :disabled="store.filteredNotes.length === 0"
+        data-tooltip="清空回收站" 
+        @click="handleClear"
+      >
+        <Trash2 class="btn-icon-plus" />
+        <span>清空回收站</span>
+      </button>
+
       <!-- 新建便签 -->
       <button 
+        v-else
         class="primary-btn" 
         data-tooltip="新建便签" 
         @click="handleAddNote"
@@ -237,20 +265,37 @@ const handleAddNote = () => {
   font-size: 13px;
   font-weight: 600;
   box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.3);
+  transition: all 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--accent-hover);
     box-shadow: 0 6px 16px -2px rgba(99, 102, 241, 0.4);
     transform: translateY(-1px);
   }
 
-  &:active {
+  &:active:not(:disabled) {
     transform: translateY(0);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 
   .btn-icon-plus {
     width: 15px;
     height: 15px;
+  }
+  
+  &.danger-btn {
+    background: var(--danger-color, #ff4d4f);
+    box-shadow: 0 4px 12px -2px rgba(255, 77, 79, 0.3);
+    
+    &:hover:not(:disabled) {
+      background: #ff7875;
+      box-shadow: 0 6px 16px -2px rgba(255, 77, 79, 0.4);
+    }
   }
 }
 

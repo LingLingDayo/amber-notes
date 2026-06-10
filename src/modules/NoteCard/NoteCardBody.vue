@@ -187,7 +187,7 @@ onBeforeUnmount(() => {
     ></textarea>
     <template v-else>
       <div class="card-body-content">
-        <pre class="card-content">{{ note.content || '双击粘贴，点击右上角编辑...' }}</pre>
+        <pre class="card-content">{{ note.content || (note.isDeleted ? '无内容' : '双击粘贴，点击右上角编辑...') }}</pre>
       </div>
       <!-- 便签标签展示 -->
       <div v-if="note.tags && note.tags.length > 0" class="note-tags-list">

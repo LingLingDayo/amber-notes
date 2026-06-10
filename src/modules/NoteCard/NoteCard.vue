@@ -80,12 +80,13 @@ const cancelEdit = () => {
 
 // 双击粘贴逻辑
 const handleDoubleClick = () => {
-  if (isEditing.value) return; // 如果在编辑中，不触发双击粘贴
+  if (isEditing.value || props.note.isDeleted) return; // 如果在编辑中或已删除，不触发双击粘贴
   store.handlePasteNote(props.note.content);
 };
 
 // 切换置顶
 const togglePin = () => {
+  if (props.note.isDeleted) return;
   store.updateNote(props.note.id, {
     isPinned: !props.note.isPinned
   }, false);
@@ -94,7 +95,7 @@ const togglePin = () => {
 
 // 拖拽相关事件
 const handleDragStart = (e: DragEvent) => {
-  if (store.sortMode !== 'custom' || isEditing.value) {
+  if (store.sortMode !== 'custom' || isEditing.value || props.note.isDeleted) {
     e.preventDefault();
     return;
   }
@@ -178,9 +179,14 @@ onMounted(() => {
   <div 
     ref="cardRef"
     class="note-card"
-    :class="{ pinned: note.isPinned, editing: isEditing, dragging: store.draggedNoteId === note.id }"
+    :class="{ 
+      pinned: note.isPinned, 
+      editing: isEditing, 
+      dragging: store.draggedNoteId === note.id,
+      'is-in-trash': note.isDeleted
+    }"
     :style="colorStyle"
-    :draggable="store.sortMode === 'custom' && !isEditing"
+    :draggable="store.sortMode === 'custom' && !isEditing && !note.isDeleted"
     @dblclick="handleDoubleClick"
     @dragstart="handleDragStart"
     @dragover.prevent
@@ -300,6 +306,19 @@ onMounted(() => {
     
     &:active {
       cursor: grabbing;
+    }
+  }
+
+  &.is-in-trash {
+    opacity: 0.65;
+    transform: none !important;
+    box-shadow: none !important;
+    cursor: default !important;
+    
+    &:hover {
+      opacity: 0.85;
+      transform: none !important;
+      box-shadow: none !important;
     }
   }
 }

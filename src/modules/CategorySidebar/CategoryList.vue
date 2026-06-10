@@ -59,9 +59,9 @@ const confirmDelete = async (id: string, name: string) => {
 // 获取某个分类下的便签总数
 const getNoteCount = (categoryId: string) => {
   if (categoryId === 'all') {
-    return store.notes.length;
+    return store.notes.filter(n => n.isDeleted !== true).length;
   }
-  return store.notes.filter(n => n.categoryId === categoryId).length;
+  return store.notes.filter(n => n.categoryId === categoryId && n.isDeleted !== true).length;
 };
 
 // 拖动排序相关的状态与方法
@@ -110,78 +110,96 @@ const onDragEnd = () => {
 </script>
 
 <template>
-  <TransitionGroup 
-    tag="div" 
-    name="category-list" 
-    :class="{ 'uTools': isUTools() }" 
-    class="sidebar-menu"
-  >
-    <div 
-      v-for="(cat, index) in store.orderedCategories" 
-      :key="cat.id"
-      class="menu-item"
-      :class="{ 
-        active: store.currentCategoryId === cat.id,
-        'has-actions': !cat.isSystem,
-        'dragging': draggedIndex === index
-      }"
-      :draggable="editingId !== cat.id"
-      @click="store.currentCategoryId = cat.id"
-      @dragstart="onDragStart($event, index)"
-      @dragover.prevent="onDragOver($event, index)"
-      @dragend="onDragEnd"
+  <div :class="{ 'uTools': isUTools() }" class="sidebar-menu">
+    <TransitionGroup 
+      tag="div" 
+      name="category-list" 
+      style="display: flex; flex-direction: column; gap: 6px;"
     >
-      <div class="active-indicator"></div>
-      
-      <!-- 系统分类 (全部便签) -->
-      <template v-if="cat.isSystem">
-        <div class="item-left">
-          <Folder class="item-icon" />
-          <span class="item-name" data-tooltip="全部便签">全部便签</span>
-        </div>
-        <span class="item-badge">{{ getNoteCount('all') }}</span>
-      </template>
-
-      <!-- 用户自定义分类 -->
-      <template v-else>
-        <!-- 编辑状态 -->
-        <div v-if="editingId === cat.id" class="item-edit-wrapper" @click.stop>
-          <input 
-            :ref="setEditInputRef"
-            v-model="editCategoryName"
-            type="text" 
-            class="item-edit-input"
-            @keyup.enter="submitEdit(cat.id)"
-            @keyup.esc="cancelEdit"
-            @blur="submitEdit(cat.id)"
-          />
-          <button class="edit-btn confirm" @click="submitEdit(cat.id)">
-            <Check class="btn-icon-small" />
-          </button>
-        </div>
-
-        <!-- 正常展示状态 -->
-        <template v-else>
+      <div 
+        v-for="(cat, index) in store.orderedCategories" 
+        :key="cat.id"
+        class="menu-item"
+        :class="{ 
+          active: store.currentCategoryId === cat.id,
+          'has-actions': !cat.isSystem,
+          'dragging': draggedIndex === index
+        }"
+        :draggable="editingId !== cat.id"
+        @click="store.currentCategoryId = cat.id"
+        @dragstart="onDragStart($event, index)"
+        @dragover.prevent="onDragOver($event, index)"
+        @dragend="onDragEnd"
+      >
+        <div class="active-indicator"></div>
+        
+        <!-- 系统分类 (全部便签) -->
+        <template v-if="cat.isSystem">
           <div class="item-left">
             <Folder class="item-icon" />
-            <span class="item-name" :data-tooltip="cat.name" @dblclick="startEdit(cat.id, cat.name)">{{ cat.name }}</span>
+            <span class="item-name" data-tooltip="全部便签">全部便签</span>
           </div>
-          
-          <div class="item-right" @click.stop>
-            <span class="item-badge">{{ getNoteCount(cat.id) }}</span>
-            <div class="item-actions">
-              <button class="action-btn" data-tooltip="编辑分类" @click="startEdit(cat.id, cat.name)">
-                <Edit3 class="action-icon" />
-              </button>
-              <button class="action-btn delete" data-tooltip="删除分类" @click="confirmDelete(cat.id, cat.name)">
-                <Trash2 class="action-icon" />
-              </button>
-            </div>
-          </div>
+          <span class="item-badge">{{ getNoteCount('all') }}</span>
         </template>
-      </template>
+  
+        <!-- 用户自定义分类 -->
+        <template v-else>
+          <!-- 编辑状态 -->
+          <div v-if="editingId === cat.id" class="item-edit-wrapper" @click.stop>
+            <input 
+              :ref="setEditInputRef"
+              v-model="editCategoryName"
+              type="text" 
+              class="item-edit-input"
+              @keyup.enter="submitEdit(cat.id)"
+              @keyup.esc="cancelEdit"
+              @blur="submitEdit(cat.id)"
+            />
+            <button class="edit-btn confirm" @click="submitEdit(cat.id)">
+              <Check class="btn-icon-small" />
+            </button>
+          </div>
+  
+          <!-- 正常展示状态 -->
+          <template v-else>
+            <div class="item-left">
+              <Folder class="item-icon" />
+              <span class="item-name" :data-tooltip="cat.name" @dblclick="startEdit(cat.id, cat.name)">{{ cat.name }}</span>
+            </div>
+            
+            <div class="item-right" @click.stop>
+              <span class="item-badge">{{ getNoteCount(cat.id) }}</span>
+              <div class="item-actions">
+                <button class="action-btn" data-tooltip="编辑分类" @click="startEdit(cat.id, cat.name)">
+                  <Edit3 class="action-icon" />
+                </button>
+                <button class="action-btn delete" data-tooltip="删除分类" @click="confirmDelete(cat.id, cat.name)">
+                  <Trash2 class="action-icon" />
+                </button>
+              </div>
+            </div>
+          </template>
+        </template>
+      </div>
+    </TransitionGroup>
+
+    <!-- 分割线 -->
+    <div class="menu-divider"></div>
+
+    <!-- 垃圾箱分类 -->
+    <div 
+      class="menu-item trash-item"
+      :class="{ active: store.currentCategoryId === 'trash' }"
+      @click="store.currentCategoryId = 'trash'"
+    >
+      <div class="active-indicator"></div>
+      <div class="item-left">
+        <Trash2 class="item-icon" />
+        <span class="item-name" data-tooltip="已删除的便签">垃圾箱</span>
+      </div>
+      <span class="item-badge">{{ store.trashNotesCount }}</span>
     </div>
-  </TransitionGroup>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -422,5 +440,24 @@ const onDragEnd = () => {
 
 .category-list-move {
   transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.menu-divider {
+  height: 1px;
+  background: var(--panel-border);
+  margin: 6px 4px;
+  opacity: 0.35;
+}
+
+.trash-item {
+  &.active {
+    .item-icon {
+      color: var(--danger-color, #ff4d4f) !important;
+    }
+    .item-badge {
+      background: var(--danger-color, #ff4d4f) !important;
+      color: var(--text-on-accent, #ffffff) !important;
+    }
+  }
 }
 </style>
