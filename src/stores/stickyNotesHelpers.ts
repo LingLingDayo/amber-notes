@@ -137,49 +137,67 @@ export const exportSingleNoteAsTxt = (note: Note, showToast: (msg: string, type?
   }
 };
 
+export const getDefaultNotes = (): Note[] => [
+  {
+    id: 'n1',
+    categoryId: '1',
+    title: '✨ 欢迎使用拾光便签',
+    content:
+      '嗨喽！这是一个基于 uTools 平台开发的便签插件。在这里你可以分类整理你的日常工作备忘、常用快捷回复和奇思妙想！！',
+    color: 'yellow',
+    isPinned: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    tags: ['欢迎', '指南']
+  },
+  {
+    id: 'n2',
+    categoryId: '2',
+    title: '🌈 核心特色功能',
+    content:
+      `1. 双击快捷粘贴：双击便签卡片，将自动隐藏并把内容直接粘贴到你的光标输入位置，适合常用回复或模版。
+2. 多级分类管理：支持无限层级的子分类与自由重排。分类项右侧工具栏可快速进行添加子分类、重命名与删除操作。`,
+    color: 'blue',
+    isPinned: false,
+    createdAt: Date.now() - 1000,
+    updatedAt: Date.now() - 1000,
+    tags: ['特色', '效率']
+  },
+  {
+    id: 'n3',
+    categoryId: '1',
+    title: '🎯 快捷操作指南',
+    content:
+      '本便签支持丰富的个性化与管理操作：点击左上角大头针可置顶；底部图标可修改卡片颜色或移动所属分类；顶部操作栏支持切换深浅主题、调整布局与排序。在「自定义排序」下还支持鼠标拖拽重排卡片。',
+    color: 'green',
+    isPinned: false,
+    createdAt: Date.now() - 2000,
+    updatedAt: Date.now() - 2000,
+    tags: ['操作', '快速开始']
+  },
+  {
+    id: 'n4',
+    categoryId: '3',
+    title: '⌨️ 快捷键指南',
+    content:
+      `1. 极速新建：【Ctrl + Alt + N】可在当前分类下快速创建空白便签。
+2. 快速搜索：【Ctrl + F】可使光标自动聚焦到搜索框，输入关键字直接过滤。
+3. 保存编辑：在内容编辑框内，按【Ctrl + Enter】可以直接保存内容。
+4. 放弃编辑：在编辑标题或内容时，按【Esc】可以放弃修改并退出。`,
+    color: 'purple',
+    isPinned: false,
+    createdAt: Date.now() - 3000,
+    updatedAt: Date.now() - 3000,
+    tags: ['快捷键', '效率']
+  }
+];
+
 export const devResetNotes = (
   notes: { value: Note[] },
   saveNotes: () => void,
   showToast: (msg: string, type?: any) => void
 ) => {
-  notes.value = [
-    {
-      id: 'n1',
-      categoryId: '1',
-      title: '✨ 欢迎使用拾光便签',
-      content:
-        '哈喽！这是一个基于 uTools 平台开发的便签插件。在这里你可以分类整理你的日常工作备忘、常用快捷回复和奇思妙想。',
-      color: 'yellow',
-      isPinned: true,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      tags: ['欢迎', '指南']
-    },
-    {
-      id: 'n2',
-      categoryId: '1',
-      title: '🚀 核心特色功能：双击粘贴',
-      content:
-        '双击本便签卡片，本插件将自动隐藏并把便签内容直接粘贴到你的光标输入位置！非常适合存储客服话术、代码模板和常用邮箱地址等。',
-      color: 'blue',
-      isPinned: false,
-      createdAt: Date.now() - 1000,
-      updatedAt: Date.now() - 1000,
-      tags: ['特色', '效率']
-    },
-    {
-      id: 'n3',
-      categoryId: '2',
-      title: '💡 快捷操作指南',
-      content:
-        '1. 点击卡片右上角大头针可以置顶便签。\n2. 点击下方调色盘图标一键切换便签主题颜色。\n3. 右侧工具栏支持一键搜索、清空分类或在当前分类下极速创建便签。',
-      color: 'green',
-      isPinned: false,
-      createdAt: Date.now() - 2000,
-      updatedAt: Date.now() - 2000,
-      tags: ['操作', '快速开始']
-    }
-  ];
+  notes.value = getDefaultNotes();
   saveNotes();
   showToast('已重置所有便签(Notes)', 'success');
 };
