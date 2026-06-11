@@ -160,10 +160,15 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   const deleteCategory = (id: string) => {
     categoryStore.deleteCategory(id);
 
-    // 更新属于该分类的便签为 'uncategorized'
+    // 将属于该被删除分类的所有便签移至回收站
     noteStore.notes = noteStore.notes.map(n => {
       if (n.categoryId === id) {
-        return { ...n, categoryId: 'uncategorized' };
+        return {
+          ...n,
+          isDeleted: true,
+          deletedAt: Date.now(),
+          isPinned: false
+        };
       }
       return n;
     });
