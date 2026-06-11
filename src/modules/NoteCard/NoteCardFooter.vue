@@ -46,10 +46,10 @@ const formattedTime = computed(() => {
 // 获取原分组名称
 const originalCategoryName = computed(() => {
   if (props.note.categoryId === 'uncategorized') {
-    return '未分类';
+    return '全部便签';
   }
   const cat = store.categories.find(c => c.id === props.note.categoryId);
-  return cat ? cat.name : '未分类';
+  return cat ? cat.name : '全部便签';
 });
 
 // 复制便签内容逻辑
@@ -78,7 +78,7 @@ const moveCategory = (catId: string) => {
   store.updateNote(props.note.id, { categoryId: catId }, false);
   showFolderPicker.value = false;
   const cat = store.categories.find(c => c.id === catId);
-  store.showToast(`已移至分类 "${cat?.name || '默认'}"`);
+  store.showToast(`已移至分类 "${cat?.name || '全部便签'}"`);
 };
 
 // 删除便签
@@ -185,7 +185,7 @@ const deleteSelf = async () => {
               :class="{ active: note.categoryId === 'uncategorized' }"
               @click="moveCategory('uncategorized')"
             >
-              未分类
+              全部便签
             </button>
             <button
               v-for="cat in store.orderedCategories.filter(c => !c.isSystem)"

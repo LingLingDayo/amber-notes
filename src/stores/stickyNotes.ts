@@ -145,8 +145,7 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   const addNote = (categoryId: string, content = '', title = '', color = 'yellow') => {
     let targetCategoryId = categoryId;
     if (categoryId === 'all' || categoryId === 'trash') {
-      targetCategoryId =
-        categoryStore.categories.length > 0 ? categoryStore.categories[0].id : 'uncategorized';
+      targetCategoryId = 'uncategorized';
     }
     return noteStore.addNote(targetCategoryId, content, title, color);
   };
