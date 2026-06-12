@@ -113,9 +113,9 @@ const deleteSelf = async () => {
     <!-- 垃圾箱中卡片的专属操作栏：永久显示 -->
     <div v-if="note.isDeleted" class="card-actions is-deleted-actions">
       <!-- 原分组 -->
-      <div class="action-btn original-folder-btn" :data-tooltip="`原分组: ${originalCategoryName}`">
+      <button class="action-btn" :data-tooltip="`原分组: ${originalCategoryName}`">
         <Folder class="action-icon" />
-      </div>
+      </button>
 
       <!-- 复制 -->
       <button class="action-btn" data-tooltip="复制" @click="copyNoteContent">
@@ -135,6 +135,15 @@ const deleteSelf = async () => {
 
     <!-- 正常卡片操作栏 -->
     <div v-else class="card-actions">
+      <!-- 分组 -->
+      <button
+        v-if="store.currentCategoryId === 'all'"
+        class="action-btn"
+        :data-tooltip="`分组: ${originalCategoryName}`"
+      >
+        <Folder class="action-icon" />
+      </button>
+
       <!-- 换色调色盘 -->
       <div class="action-popover-wrapper">
         <button
@@ -267,9 +276,7 @@ const deleteSelf = async () => {
   opacity: 0.8;
 }
 
-.original-folder-btn {
-  cursor: default;
-}
+
 
 .updated-time {
   font-size: 10px;
@@ -279,7 +286,7 @@ const deleteSelf = async () => {
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   opacity: 0;
   transform: translateY(4px);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
