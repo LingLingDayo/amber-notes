@@ -1,6 +1,6 @@
 @use 'variables' as *;
 
-// 磨砂玻璃背景混入
+// 半透明背景混入
 @mixin glass-panel($bg: var(--panel-bg), $border: var(--panel-border)) {
   background: $bg;
   border: 1px solid $border;
