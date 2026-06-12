@@ -18,6 +18,8 @@
   --shadow-sm: 0 3px 8px -2px rgba(15, 23, 42, 0.12);
   --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 16px -6px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 20px 40px -15px rgba(15, 23, 42, 0.12);
+  --divider-color: rgba(15, 23, 42, 0.08);
+  --drag-inside-bg: rgba(99, 102, 241, 0.12);
   --glass-blur: 16px;
 
   // 弹出层与弹窗
@@ -84,6 +86,8 @@
     --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 16px -6px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.4);
+    --divider-color: rgba(248, 250, 252, 0.08);
+    --drag-inside-bg: rgba(129, 140, 248, 0.18);
 
     --popover-bg: #1e293b;
     --popover-border: rgba(255, 255, 255, 0.08);
@@ -144,6 +148,8 @@
   --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 16px -6px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.4);
+  --divider-color: rgba(248, 250, 252, 0.08);
+  --drag-inside-bg: rgba(129, 140, 248, 0.18);
 
   --popover-bg: #1e293b;
   --popover-border: rgba(255, 255, 255, 0.08);
@@ -204,6 +210,8 @@
   --shadow-sm: 0 2px 8px -2px rgba(15, 23, 42, 0.05);
   --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 16px -6px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 20px 40px -15px rgba(15, 23, 42, 0.12);
+  --divider-color: rgba(15, 23, 42, 0.08);
+  --drag-inside-bg: rgba(99, 102, 241, 0.12);
 
   --popover-bg: #ffffff;
   --popover-border: rgba(15, 23, 42, 0.08);
@@ -282,10 +290,12 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.12);
   background: color-mix(in srgb, var(--text-primary) 12%, transparent);
   border-radius: 4px;
 
   &:hover {
+    background: rgba(15, 23, 42, 0.25);
     background: color-mix(in srgb, var(--text-primary) 25%, transparent);
   }
 }
