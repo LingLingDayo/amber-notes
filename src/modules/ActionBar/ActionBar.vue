@@ -110,7 +110,7 @@ const handleClear = async () => {
   );
   if (ok) {
     store.clearNotes(store.currentCategoryId);
-    store.showToast('已将便签移至回收站');
+    store.showToast('已将所有便签移至回收站');
   }
 };
 
