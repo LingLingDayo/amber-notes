@@ -2,19 +2,24 @@
 import { useSettings } from './useSettings';
 import { SETTINGS_SCHEMA } from './settingsConfig';
 import SettingControl from './SettingControl.vue';
-import AboutPanel from './AboutPanel.vue';
-import DataPanel from './DataPanel.vue';
-import { Settings, X, Plus, Trash2 } from 'lucide-vue-next';
+import { Settings, X } from 'lucide-vue-next';
 
 const {
   store,
   activeTab,
   getSettingValue,
-  clearTooltip,
   handleClear,
   handleAddNote,
   close
 } = useSettings();
+
+const handleButtonAction = (actionKey: string) => {
+  if (actionKey === 'addNote') {
+    handleAddNote();
+  } else if (actionKey === 'clearNotes') {
+    handleClear();
+  }
+};
 </script>
 
 <template>
@@ -62,35 +67,8 @@ const {
                   :key="item.key"
                   v-model="getSettingValue(item.key).value"
                   :item="item"
-                >
-                  <!-- 快捷操作自定义插槽 -->
-                  <template #quickActions>
-                    <div class="quick-actions-row">
-                      <button class="action-btn-primary" @click="handleAddNote">
-                        <Plus class="control-icon" />
-                        <span>新建便签</span>
-                      </button>
-                      <button
-                        class="action-btn-danger"
-                        :disabled="store.filteredNotes.length === 0"
-                        @click="handleClear"
-                      >
-                        <Trash2 class="control-icon" />
-                        <span>{{ clearTooltip }}</span>
-                      </button>
-                    </div>
-                  </template>
-
-                  <!-- 导入备份恢复自定义插槽 -->
-                  <template #backupRestore>
-                    <DataPanel />
-                  </template>
-
-                  <!-- 关于插件自定义插槽 -->
-                  <template #aboutInfo>
-                    <AboutPanel />
-                  </template>
-                </SettingControl>
+                  @action="handleButtonAction"
+                />
               </div>
             </div>
           </div>
@@ -218,8 +196,8 @@ const {
 
 .settings-panel {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
+  flex-flow: row wrap;
+  gap: 20px 16px;
 }
 
 .panel-title {
@@ -230,84 +208,13 @@ const {
   border-left: 3px solid var(--accent-color);
   padding-left: 8px;
   line-height: 1.2;
+  width: 100%;
 }
 
 .quick-actions-row {
   display: flex;
   gap: 10px;
   width: 100%;
-}
-
-.action-btn-primary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 10px;
-  background: var(--accent-color);
-  border: 1px solid transparent;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  box-shadow: 0 4px 10px -2px rgba(99, 102, 241, 0.25);
-
-  &:hover {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px -2px rgba(99, 102, 241, 0.35);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  .control-icon {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-.action-btn-danger {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 10px;
-  background: var(--danger-color, #ff4d4f);
-  border: 1px solid transparent;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  box-shadow: 0 4px 10px -2px rgba(255, 77, 79, 0.2);
-
-  &:hover:not(:disabled) {
-    background: #ff7875;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px -2px rgba(255, 77, 79, 0.3);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .control-icon {
-    width: 14px;
-    height: 14px;
-  }
 }
 
 /* 弹窗过渡动画 */

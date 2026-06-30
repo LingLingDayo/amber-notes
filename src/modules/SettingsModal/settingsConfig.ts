@@ -1,5 +1,7 @@
 import { markRaw } from 'vue';
-import { Sun, Moon, Columns, Settings, Database, Info } from 'lucide-vue-next';
+import { Sun, Moon, Columns, Settings, Database, Info, Plus, Trash2 } from 'lucide-vue-next';
+import DataPanel from './DataPanel.vue';
+import AboutPanel from './AboutPanel.vue';
 
 export interface SettingOption {
   label: string;
@@ -7,7 +9,18 @@ export interface SettingOption {
   icon?: any;
 }
 
-export type SettingType = 'input' | 'textarea' | 'select' | 'multiselect' | 'radio' | 'custom';
+export type SettingType = 'input' | 'textarea' | 'select' | 'multiselect' | 'radio' | 'button-group' | 'component';
+
+export interface ButtonConfig {
+  label: string | ((store: any) => string);
+  icon?: any;
+  variant?: 'primary' | 'danger' | 'secondary';
+  color?: string;
+  width?: string;
+  minWidth?: string;
+  actionKey: string;
+  disabled?: boolean | ((store: any) => boolean);
+}
 
 export interface SettingItem {
   key: string;
@@ -17,6 +30,9 @@ export interface SettingItem {
   options?: SettingOption[];
   placeholder?: string;
   props?: Record<string, any>;
+  width?: string;
+  buttons?: ButtonConfig[];
+  component?: any;
 }
 
 export interface SettingGroup {
@@ -74,7 +90,8 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         key: 'sortMode',
         label: '默认便签排序方式',
         type: 'select',
-        desc: '设置右侧便签展示列表的默认排序方式。',
+        desc: '设置默认的便签排序规则。',
+        width: '50%',
         options: [
           { label: '按日期排序', value: 'date' },
           { label: '按标题首字母排序', value: 'title' },
@@ -86,17 +103,42 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         key: 'sortOrder',
         label: '默认排序顺序',
         type: 'radio',
-        desc: '设置列表在升序或降序排列时的默认展示顺序。',
+        desc: '设置列表的默认排列顺序。',
+        width: '50%',
         options: [
-          { label: '升序 (A-Z / 旧在前)', value: 'asc' },
-          { label: '降序 (Z-A / 新在前)', value: 'desc' }
+          { label: '升序', value: 'asc' },
+          { label: '降序', value: 'desc' }
         ]
       },
       {
         key: 'quickActions',
         label: '快捷操作',
-        type: 'custom',
-        desc: '在设置中快速触发新建便签或执行清空当前分类等动作。'
+        type: 'button-group',
+        desc: '在设置中快速触发新建便签或执行清空当前分类等动作。',
+        buttons: [
+          {
+            label: '新建便签',
+            icon: markRaw(Plus),
+            variant: 'primary',
+            width: '120px',
+            minWidth: '80px',
+            actionKey: 'addNote'
+          },
+          {
+            label: (store: any) => {
+              if (store.currentCategoryId === 'trash') {
+                return '清空回收站';
+              }
+              return store.currentCategoryId === 'all' ? '清空所有便签' : '清空当前分类便签';
+            },
+            icon: markRaw(Trash2),
+            variant: 'danger',
+            width: '120px',
+            minWidth: '80px',
+            actionKey: 'clearNotes',
+            disabled: (store: any) => store.filteredNotes.length === 0
+          }
+        ]
       }
     ]
   },
@@ -109,8 +151,9 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
       {
         key: 'backupRestore',
         label: '备份操作',
-        type: 'custom',
-        desc: '导出备份能将当前所有的便签及分类列表转换为备份文件；导入恢复能从 JSON 备份中加载数据。'
+        type: 'component',
+        desc: '导出备份能将当前所有的便签及分类列表转换为备份文件；导入恢复能从 JSON 备份中加载数据。',
+        component: markRaw(DataPanel)
       }
     ]
   },
@@ -123,7 +166,8 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
       {
         key: 'aboutInfo',
         label: '版本信息',
-        type: 'custom'
+        type: 'component',
+        component: markRaw(AboutPanel)
       }
     ]
   }

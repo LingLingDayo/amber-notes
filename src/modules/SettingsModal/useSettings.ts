@@ -63,13 +63,6 @@ export function useSettings() {
   };
 
   // 快捷操作逻辑
-  const clearTooltip = computed(() => {
-    if (store.currentCategoryId === 'trash') {
-      return '清空回收站';
-    }
-    return store.currentCategoryId === 'all' ? '清空所有便签' : '清空当前分类便签';
-  });
-
   const handleClear = async () => {
     if (store.currentCategoryId === 'trash') {
       const ok = await store.askConfirm(
@@ -124,7 +117,6 @@ export function useSettings() {
     triggerFileInput,
     handleFileImport,
     exportBackup,
-    clearTooltip,
     handleClear,
     handleAddNote,
     close
