@@ -1,4 +1,4 @@
-# 📌 uTools 拾光便签 (AmberNotes)
+# 📌 uTools 拾光便签 (MomentNotes)
 
 > **高颜值便签，双击一键极速粘贴。**
 >
