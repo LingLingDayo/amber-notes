@@ -28,6 +28,11 @@ const submitEdit = (id: string) => {
   if (editingId.value !== id) return;
   const name = editCategoryName.value.trim();
   if (name) {
+    const originalCategory = store.categories.find(c => c.id === id);
+    if (originalCategory && originalCategory.name === name) {
+      cancelEdit();
+      return;
+    }
     store.updateCategory(id, name);
     store.showToast(`分类已重命名为 "${name}"`);
     editingId.value = null;
