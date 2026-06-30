@@ -52,10 +52,27 @@ const resolveButtonDisabled = (btn: any) => {
   }
   return !!btn.disabled;
 };
+
+const resolveButtonVisible = (btn: any) => {
+  if (btn.visible === undefined) return true;
+  if (typeof btn.visible === 'function') {
+    return btn.visible(store);
+  }
+  return !!btn.visible;
+};
+
+const isVisible = computed(() => {
+  if (props.item.visible === undefined) return true;
+  if (typeof props.item.visible === 'function') {
+    return props.item.visible(store);
+  }
+  return !!props.item.visible;
+});
 </script>
 
 <template>
   <div
+    v-if="isVisible"
     class="settings-group"
     :class="[`type-${item.type}`, { 'is-partial-width': item.width && item.width !== '100%' }]"
     :style="groupStyle"
@@ -104,19 +121,20 @@ const resolveButtonDisabled = (btn: any) => {
 
       <!-- 5. Button Group -->
       <div v-else-if="item.type === 'button-group'" class="quick-actions-row">
-        <SettingButton
-          v-for="btn in item.buttons"
-          :key="btn.actionKey"
-          :variant="btn.variant"
-          :width="btn.width"
-          :min-width="btn.minWidth"
-          :color="btn.color"
-          :disabled="resolveButtonDisabled(btn)"
-          @click="emit('action', btn.actionKey)"
-        >
-          <component :is="btn.icon" v-if="btn.icon" class="control-icon" />
-          <span>{{ resolveButtonLabel(btn) }}</span>
-        </SettingButton>
+        <template v-for="btn in item.buttons" :key="btn.actionKey">
+          <SettingButton
+            v-if="resolveButtonVisible(btn)"
+            :variant="btn.variant"
+            :width="btn.width"
+            :min-width="btn.minWidth"
+            :color="btn.color"
+            :disabled="resolveButtonDisabled(btn)"
+            @click="emit('action', btn.actionKey)"
+          >
+            <component :is="btn.icon" v-if="btn.icon" class="control-icon" />
+            <span>{{ resolveButtonLabel(btn) }}</span>
+          </SettingButton>
+        </template>
       </div>
 
       <!-- 6. Custom Component -->

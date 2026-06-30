@@ -20,6 +20,7 @@ export interface ButtonConfig {
   minWidth?: string;
   actionKey: string;
   disabled?: boolean | ((store: any) => boolean);
+  visible?: boolean | ((store: any) => boolean);
 }
 
 export interface SettingItem {
@@ -33,6 +34,7 @@ export interface SettingItem {
   width?: string;
   buttons?: ButtonConfig[];
   component?: any;
+  visible?: boolean | ((store: any) => boolean);
 }
 
 export interface SettingGroup {
