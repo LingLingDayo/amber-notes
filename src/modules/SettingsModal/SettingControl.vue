@@ -110,6 +110,7 @@ const isVisible = computed(() => {
         :options="item.options || []"
         :multiple="item.type === 'multiselect'"
         :placeholder="item.placeholder"
+        v-bind="item.props"
       />
 
       <!-- 4. Radio -->

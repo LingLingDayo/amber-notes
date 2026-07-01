@@ -57,6 +57,9 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         label: '右上角功能按钮管理',
         type: 'multiselect',
         desc: '配置要在右上角操作栏中显示的功能按钮。',
+        props: {
+          width: '320px'
+        },
         options: [
           { label: '切换主题', value: 'theme-toggle' },
           { label: '排序方式', value: 'sort-select' },

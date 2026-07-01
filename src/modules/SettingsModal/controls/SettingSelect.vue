@@ -13,10 +13,12 @@ const props = withDefaults(
     options: Option[];
     multiple?: boolean;
     placeholder?: string;
+    width?: string;
   }>(),
   {
     multiple: false,
-    placeholder: '请选择...'
+    placeholder: '请选择...',
+    width: ''
   }
 );
 
@@ -85,13 +87,22 @@ const displayLabel = computed(() => {
     return selectedOpt ? selectedOpt.label : props.placeholder;
   }
 });
+
+const tooltipContent = computed(() => {
+  if (props.multiple) {
+    const values = Array.isArray(props.modelValue) ? props.modelValue : [];
+    return values.length > 0 ? displayLabel.value : '';
+  }
+  return props.modelValue !== undefined && props.modelValue !== '' ? displayLabel.value : '';
+});
 </script>
 
 <template>
-  <div ref="selectRef" class="custom-select-container">
+  <div ref="selectRef" class="custom-select-container" :style="width ? { width } : undefined">
     <div
       class="select-trigger"
       :class="{ open: isOpen }"
+      :data-tooltip="tooltipContent || undefined"
       @click="toggleDropdown"
     >
       <span class="trigger-text" :class="{ placeholder: !multiple && (modelValue === undefined || modelValue === '') }">
@@ -187,6 +198,9 @@ const displayLabel = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .dropdown-item {
