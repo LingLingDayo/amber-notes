@@ -23,6 +23,26 @@ export interface ButtonConfig {
   visible?: boolean | ((store: any) => boolean);
 }
 
+export interface TextInputProps {
+  type?: 'text' | 'password' | 'email';
+  style?: string;
+}
+
+export interface NumberInputProps {
+  type: 'number';
+  min?: number;
+  max?: number;
+  step?: number;
+  style?: string;
+}
+
+export interface SelectProps {
+  width?: string;
+  style?: string;
+}
+
+export type SettingProps = TextInputProps | NumberInputProps | SelectProps;
+
 export interface SettingItem {
   key: string;
   label: string;
@@ -30,7 +50,7 @@ export interface SettingItem {
   desc?: string;
   options?: SettingOption[];
   placeholder?: string;
-  props?: Record<string, any>;
+  props?: SettingProps;
   width?: string;
   buttons?: ButtonConfig[];
   component?: any;
@@ -43,6 +63,22 @@ export interface SettingGroup {
   tabTitle?: string;
   icon?: any;
   items: SettingItem[];
+  visible?: boolean | ((store: any) => boolean);
+}
+
+/**
+ * 通用条件渲染求值器
+ * 支持 visible 属性为 boolean、返回 boolean 的函数、或未定义
+ */
+export function evaluateVisibility(
+  visible: boolean | ((store: any) => boolean) | undefined,
+  store: any
+): boolean {
+  if (visible === undefined) return true;
+  if (typeof visible === 'function') {
+    return visible(store);
+  }
+  return !!visible;
 }
 
 export const SETTINGS_SCHEMA: SettingGroup[] = [
@@ -89,6 +125,20 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
           { label: '3 列', value: 3, icon: markRaw(Columns) },
           { label: '4 列', value: 4, icon: markRaw(Columns) }
         ]
+      },
+      {
+        key: 'minNoteWidth',
+        label: '便签自适应最小宽度 (px)',
+        type: 'input',
+        desc: '在“自适应”展示列数模式下生效，单个便签卡片的最小宽度限制。默认值为 240，允许设置范围为 100 - 1000。',
+        placeholder: '240',
+        props: {
+          type: 'number',
+          min: 100,
+          max: 1000,
+          style: 'max-width: 120px;'
+        },
+        visible: (store: any) => store.gridColumns === 'auto'
       },
       {
         key: 'sortMode',

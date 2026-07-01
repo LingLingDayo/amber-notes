@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useSettings } from './useSettings';
-import { SETTINGS_SCHEMA } from './settingsConfig';
+import { SETTINGS_SCHEMA, evaluateVisibility } from './settingsConfig';
 import SettingControl from './SettingControl.vue';
 import { Settings, X } from 'lucide-vue-next';
 
@@ -41,22 +41,23 @@ const handleButtonAction = (actionKey: string) => {
         <div class="modal-body">
           <!-- 左侧 Tab 栏 -->
           <div class="tab-sidebar">
-            <button
-              v-for="group in SETTINGS_SCHEMA"
-              :key="group.id"
-              class="tab-item"
-              :class="{ active: activeTab === group.id }"
-              @click="activeTab = group.id"
-            >
-              <component :is="group.icon" v-if="group.icon" class="tab-icon" />
-              <span>{{ group.tabTitle || group.title }}</span>
-            </button>
+            <template v-for="group in SETTINGS_SCHEMA" :key="group.id">
+              <button
+                v-if="evaluateVisibility(group.visible, store)"
+                class="tab-item"
+                :class="{ active: activeTab === group.id }"
+                @click="activeTab = group.id"
+              >
+                <component :is="group.icon" v-if="group.icon" class="tab-icon" />
+                <span>{{ group.tabTitle || group.title }}</span>
+              </button>
+            </template>
           </div>
 
           <!-- 右侧配置区域 -->
           <div class="settings-content">
             <div v-for="group in SETTINGS_SCHEMA" :key="group.id">
-              <div v-if="activeTab === group.id" class="settings-panel">
+              <div v-if="activeTab === group.id && evaluateVisibility(group.visible, store)" class="settings-panel">
                 <h4 class="panel-title">
                   {{ group.title }}
                 </h4>

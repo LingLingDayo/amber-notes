@@ -58,7 +58,10 @@ const actualColumns = computed(() => {
 // 动态网格样式
 const gridStyle = computed(() => {
   if (actualColumns.value === 'auto') {
-    return {};
+    const minWidth = Math.max(100, Math.min(1000, store.minNoteWidth || 240));
+    return {
+      gridTemplateColumns: `repeat(auto-fill, minmax(${minWidth}px, 1fr))`
+    };
   }
   return {
     gridTemplateColumns: `repeat(${actualColumns.value}, 1fr)`

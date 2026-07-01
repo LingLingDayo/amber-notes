@@ -5,7 +5,7 @@ import SettingTextarea from './controls/SettingTextarea.vue';
 import SettingSelect from './controls/SettingSelect.vue';
 import SettingRadio from './controls/SettingRadio.vue';
 import SettingButton from './controls/SettingButton.vue';
-import { SettingItem } from './settingsConfig';
+import { SettingItem, evaluateVisibility } from './settingsConfig';
 import { useStickyNotesStore } from '@stores/stickyNotes';
 
 const props = defineProps<{
@@ -54,19 +54,11 @@ const resolveButtonDisabled = (btn: any) => {
 };
 
 const resolveButtonVisible = (btn: any) => {
-  if (btn.visible === undefined) return true;
-  if (typeof btn.visible === 'function') {
-    return btn.visible(store);
-  }
-  return !!btn.visible;
+  return evaluateVisibility(btn.visible, store);
 };
 
 const isVisible = computed(() => {
-  if (props.item.visible === undefined) return true;
-  if (typeof props.item.visible === 'function') {
-    return props.item.visible(store);
-  }
-  return !!props.item.visible;
+  return evaluateVisibility(props.item.visible, store);
 });
 </script>
 

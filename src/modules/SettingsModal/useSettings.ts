@@ -20,6 +20,8 @@ export function useSettings() {
           }
         } else if (key === 'gridColumns') {
           store.setGridColumns(val);
+        } else if (key === 'minNoteWidth') {
+          store.setMinNoteWidth(val);
         } else if (key === 'enabledActionBarButtons') {
           store.setEnabledActionBarButtons(val);
         } else if (key === 'sortMode') {

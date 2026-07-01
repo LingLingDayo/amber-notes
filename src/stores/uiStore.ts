@@ -44,6 +44,7 @@ export const useUiStore = defineStore('uiStore', () => {
 
   const gridColumns = ref<'auto' | 1 | 2 | 3 | 4>('auto');
   const maxColumns = ref<1 | 2 | 3 | 4>(4);
+  const minNoteWidth = ref<number>(240);
 
   const setGridColumns = (cols: 'auto' | 1 | 2 | 3 | 4) => {
     gridColumns.value = cols;
@@ -52,6 +53,11 @@ export const useUiStore = defineStore('uiStore', () => {
 
   const setMaxColumns = (val: 1 | 2 | 3 | 4) => {
     maxColumns.value = val;
+  };
+
+  const setMinNoteWidth = (val: number) => {
+    minNoteWidth.value = Number(val) || 240;
+    storage.setItem('sticky_notes_min_note_width', minNoteWidth.value.toString());
   };
 
   // 设置弹窗显示状态
@@ -127,8 +133,10 @@ export const useUiStore = defineStore('uiStore', () => {
     showToast,
     gridColumns,
     maxColumns,
+    minNoteWidth,
     setGridColumns,
     setMaxColumns,
+    setMinNoteWidth,
     showSettings,
     openSettings,
     closeSettings,
