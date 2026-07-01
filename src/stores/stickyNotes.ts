@@ -116,6 +116,11 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
         }
       }
 
+      const storedDateFormat = storage.getItem('sticky_notes_date_format');
+      if (storedDateFormat) {
+        uiStore.dateFormat = storedDateFormat;
+      }
+
       if (storedNotes) {
         noteStore.notes = JSON.parse(storedNotes);
       } else {
@@ -385,6 +390,8 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
     toggleTheme: uiStore.toggleTheme,
     enabledActionBarButtons: toRef(uiStore, 'enabledActionBarButtons'),
     setEnabledActionBarButtons: uiStore.setEnabledActionBarButtons,
+    dateFormat: toRef(uiStore, 'dateFormat'),
+    setDateFormat: uiStore.setDateFormat,
 
     // 初始化与备份代理
     loadData,

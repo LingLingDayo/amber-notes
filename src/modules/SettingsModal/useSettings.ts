@@ -29,6 +29,8 @@ export function useSettings() {
         } else if (key === 'sortOrder') {
           store.sortOrder = val;
           storage.setItem('sticky_notes_sort_order', val);
+        } else if (key === 'dateFormat') {
+          store.setDateFormat(val);
         } else {
           (store as any)[key] = val;
         }

@@ -88,13 +88,6 @@ const displayLabel = computed(() => {
   }
 });
 
-const tooltipContent = computed(() => {
-  if (props.multiple) {
-    const values = Array.isArray(props.modelValue) ? props.modelValue : [];
-    return values.length > 0 ? displayLabel.value : '';
-  }
-  return props.modelValue !== undefined && props.modelValue !== '' ? displayLabel.value : '';
-});
 </script>
 
 <template>
@@ -102,7 +95,6 @@ const tooltipContent = computed(() => {
     <div
       class="select-trigger"
       :class="{ open: isOpen }"
-      :data-tooltip="tooltipContent || undefined"
       @click="toggleDropdown"
     >
       <span class="trigger-text" :class="{ placeholder: !multiple && (modelValue === undefined || modelValue === '') }">

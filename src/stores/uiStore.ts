@@ -123,6 +123,13 @@ export const useUiStore = defineStore('uiStore', () => {
     storage.setItem('sticky_notes_enabled_action_bar_buttons', JSON.stringify(buttons));
   };
 
+  const dateFormat = ref<string>('YYYY.MM.DD HH:mm');
+
+  const setDateFormat = (val: string) => {
+    dateFormat.value = val || 'YYYY.MM.DD HH:mm';
+    storage.setItem('sticky_notes_date_format', dateFormat.value);
+  };
+
   return {
     confirmState,
     askConfirm,
@@ -144,7 +151,9 @@ export const useUiStore = defineStore('uiStore', () => {
     initTheme,
     toggleTheme,
     enabledActionBarButtons,
-    setEnabledActionBarButtons
+    setEnabledActionBarButtons,
+    dateFormat,
+    setDateFormat
   };
 });
 

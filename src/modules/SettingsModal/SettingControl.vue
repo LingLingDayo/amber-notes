@@ -25,6 +25,27 @@ const value = computed({
   set: (val) => emit('update:modelValue', val)
 });
 
+const getDefaultTooltip = (item: SettingItem) => {
+  if (item.default === undefined) return undefined;
+
+  let valStr = '';
+  if (item.options && item.options.length > 0) {
+    if (Array.isArray(item.default)) {
+      const labels = item.options
+        .filter(opt => item.default.includes(opt.value))
+        .map(opt => opt.label);
+      valStr = labels.join(', ');
+    } else {
+      const opt = item.options.find(opt => opt.value === item.default);
+      valStr = opt ? opt.label : String(item.default);
+    }
+  } else {
+    valStr = String(item.default);
+  }
+
+  return `默认值: ${valStr}`;
+};
+
 // 计算样式以支持自定义宽度百分比
 const groupStyle = computed(() => {
   if (!props.item.width) return {};
@@ -70,7 +91,7 @@ const isVisible = computed(() => {
     :style="groupStyle"
   >
     <div class="group-header">
-      <div class="group-label">
+      <div class="group-label" :data-tooltip="item.tooltip">
         {{ item.label }}
       </div>
       <div v-if="item.desc" class="group-desc">
@@ -85,6 +106,7 @@ const isVisible = computed(() => {
         v-model="value"
         :placeholder="item.placeholder"
         v-bind="item.props"
+        :data-tooltip="getDefaultTooltip(item)"
       />
 
       <!-- 2. Textarea -->
@@ -93,6 +115,7 @@ const isVisible = computed(() => {
         v-model="value"
         :placeholder="item.placeholder"
         v-bind="item.props"
+        :data-tooltip="getDefaultTooltip(item)"
       />
 
       <!-- 3. Select / Multiselect -->
@@ -103,6 +126,7 @@ const isVisible = computed(() => {
         :multiple="item.type === 'multiselect'"
         :placeholder="item.placeholder"
         v-bind="item.props"
+        :data-tooltip="getDefaultTooltip(item)"
       />
 
       <!-- 4. Radio -->
@@ -110,6 +134,7 @@ const isVisible = computed(() => {
         v-else-if="item.type === 'radio'"
         v-model="value"
         :options="item.options || []"
+        :data-tooltip="getDefaultTooltip(item)"
       />
 
       <!-- 5. Button Group -->
@@ -144,7 +169,7 @@ const isVisible = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-bottom: 16px;
+  // padding-bottom: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   box-sizing: border-box;
 

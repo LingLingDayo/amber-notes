@@ -48,6 +48,8 @@ export interface SettingItem {
   label: string;
   type: SettingType;
   desc?: string;
+  default?: any;
+  tooltip?: string;
   options?: SettingOption[];
   placeholder?: string;
   props?: SettingProps;
@@ -93,6 +95,7 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         label: '右上角功能按钮管理',
         type: 'multiselect',
         desc: '配置要在右上角操作栏中显示的功能按钮。',
+        default: ['theme-toggle', 'sort-select', 'columns-select', 'clear-notes'],
         props: {
           width: '320px'
         },
@@ -108,6 +111,7 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         label: '个性化主题',
         type: 'radio',
         desc: '设置界面的显示主题。在 uTools 插件模式下，主题将自动根据 uTools 的偏好设置进行贴合与变换。',
+        default: false,
         options: [
           { label: '浅色模式', value: false, icon: markRaw(Sun) },
           { label: '深色模式', value: true, icon: markRaw(Moon) }
@@ -118,6 +122,7 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         label: '便签展示列数',
         type: 'radio',
         desc: '调整便签卡片在右侧展示区的排列列数。选择“自适应”将根据界面宽度自动计算最合适的排布数量。',
+        default: 'auto',
         options: [
           { label: '自适应', value: 'auto', icon: markRaw(Columns) },
           { label: '1 列', value: 1, icon: markRaw(Columns) },
@@ -131,6 +136,7 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         label: '便签自适应最小宽度 (px)',
         type: 'input',
         desc: '在“自适应”展示列数模式下生效，单个便签卡片的最小宽度限制。默认值为 240，允许设置范围为 100 - 1000。',
+        default: 240,
         placeholder: '240',
         props: {
           type: 'number',
@@ -144,7 +150,8 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         key: 'sortMode',
         label: '默认便签排序方式',
         type: 'select',
-        desc: '设置默认的便签排序规则。',
+        desc: '设置默认 of 便签排序规则。',
+        default: 'date',
         width: '50%',
         options: [
           { label: '按日期排序', value: 'date' },
@@ -158,11 +165,25 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         label: '默认排序顺序',
         type: 'radio',
         desc: '设置列表的默认排列顺序。',
+        default: 'desc',
         width: '50%',
         options: [
           { label: '升序', value: 'asc' },
           { label: '降序', value: 'desc' }
         ]
+      },
+      {
+        key: 'dateFormat',
+        label: '自定义便签日期格式',
+        type: 'input',
+        desc: '自定义便签卡片底部显示的更新日期格式。',
+        default: 'YYYY.MM.DD HH:mm',
+        placeholder: 'YYYY.MM.DD HH:mm',
+        tooltip: '支持的格式说明:\nYYYY - 四位年 (如 2026)\nYY - 两位年 (如 26)\nMM - 两位月 (01-12)\nM - 一位月 (1-12)\nDD - 两位日 (01-31)\nD - 一位日 (1-31)\nHH - 两位24小时制小时 (00-23)\nH - 一位24小时制小时 (0-23)\nhh - 两位12小时制小时 (01-12)\nh - 一位12小时制小时 (1-12)\nmm - 两位分钟 (00-59)\nm - 一位分钟 (0-59)\nss - 两位秒数 (00-59)\ns - 一位秒数 (0-59)\nA - 上下午标记 (AM/PM)\na - 中文上下午标记 (上午/下午)\n示例: YYYY-MM-DD HH:mm:ss 或 YYYY/MM/DD',
+        props: {
+          type: 'text',
+          style: 'max-width: 240px;'
+        }
       },
       {
         key: 'quickActions',
