@@ -54,6 +54,10 @@ const value = computed({
   min-height: 60px;
   font-family: inherit;
 
+  &:hover:not(:disabled) {
+    border-color: var(--accent-color);
+  }
+
   &:focus {
     border-color: var(--accent-color);
     background: var(--input-focus-bg, rgba(0, 0, 0, 0.08));

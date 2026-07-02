@@ -2,6 +2,7 @@
 import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { Note } from '@type';
 import { useStickyNotesStore } from '@stores/stickyNotes';
+import { useShortcutStore } from '@stores/shortcutStore';
 import { isUTools } from '@utils/storage';
 
 const props = defineProps<{
@@ -17,6 +18,25 @@ const emit = defineEmits<{
 }>();
 
 const store = useStickyNotesStore();
+const shortcutStore = useShortcutStore();
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  const keyString = shortcutStore.getEventKeyString(e);
+  if (!keyString) return;
+
+  const matched = shortcutStore.shortcuts.find(s => s.currentKey === keyString);
+  if (matched) {
+    if (matched.id === 'saveEdit') {
+      e.preventDefault();
+      e.stopPropagation();
+      emit('save-edit');
+    } else if (matched.id === 'cancelEdit') {
+      e.preventDefault();
+      e.stopPropagation();
+      emit('cancel-edit');
+    }
+  }
+};
 
 // 复制标签逻辑
 const copyTag = async (tag: string) => {
@@ -212,8 +232,7 @@ onBeforeUnmount(() => {
       v-model="content"
       placeholder="写点什么..."
       class="content-textarea"
-      @keydown.esc="emit('cancel-edit')"
-      @keydown.ctrl.enter="emit('save-edit')"
+      @keydown="handleKeyDown"
       @input="adjustTextareaHeight"
     ></textarea>
     <template v-else>

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { Pin, Edit2 } from 'lucide-vue-next';
 import { Note } from '@type';
+import { useShortcutStore } from '@stores/shortcutStore';
 
 defineProps<{
   note: Note;
@@ -15,6 +16,31 @@ const emit = defineEmits<{
   (e: 'save-edit'): void;
   (e: 'cancel-edit'): void;
 }>();
+
+const shortcutStore = useShortcutStore();
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  const keyString = shortcutStore.getEventKeyString(e);
+  if (!keyString) return;
+
+  const matched = shortcutStore.shortcuts.find(s => s.currentKey === keyString);
+  if (matched) {
+    if (matched.id === 'saveEdit') {
+      e.preventDefault();
+      e.stopPropagation();
+      emit('save-edit');
+    } else if (matched.id === 'cancelEdit') {
+      e.preventDefault();
+      e.stopPropagation();
+      emit('cancel-edit');
+    }
+  } else if (e.key === 'Enter') {
+    // 兼容默认回车保存单行标题
+    e.preventDefault();
+    e.stopPropagation();
+    emit('save-edit');
+  }
+};
 </script>
 
 <template>
@@ -47,8 +73,7 @@ const emit = defineEmits<{
       type="text"
       placeholder="标题 (可选)..."
       class="title-input"
-      @keyup.enter="emit('save-edit')"
-      @keyup.esc="emit('cancel-edit')"
+      @keydown="handleKeyDown"
     />
     <h3 v-else-if="note.title" class="card-title">
       {{ note.title }}

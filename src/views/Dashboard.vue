@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted } from 'vue';
 import { useStickyNotesStore } from '@stores/stickyNotes';
+import { useShortcutStore } from '@stores/shortcutStore';
 import CategorySidebar from '@modules/CategorySidebar/CategorySidebar.vue';
 import ActionBar from '@modules/ActionBar/ActionBar.vue';
 import NoteGrid from '@modules/NoteGrid.vue';
@@ -9,28 +10,22 @@ import ConfirmModal from '@components/ConfirmModal.vue';
 import SettingsModal from '@modules/SettingsModal/SettingsModal.vue';
 
 const store = useStickyNotesStore();
+const shortcutStore = useShortcutStore();
 
 const handleGlobalKeyDown = (e: KeyboardEvent) => {
-  // 1. 极速创建便签: Ctrl + Alt + N (支持键盘流)
-  if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'n') {
-    e.preventDefault();
-    store.addNote(store.currentCategoryId, '', '', 'yellow');
-    store.showToast('已快捷新建空便签，可以直接编辑');
-    return;
-  }
+  // 正在录制快捷键时，不触发全局动作响应
+  if (shortcutStore.isRecording) return;
 
-  // 2. 聚焦搜索框: Ctrl + F
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
-    const activeEl = document.activeElement;
-    const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-    if (!isInput) {
-      e.preventDefault();
-      const searchInput = document.querySelector('.search-input') as HTMLInputElement | null;
-      if (searchInput) {
-        searchInput.focus();
-        searchInput.select();
-      }
-    }
+  const keyString = shortcutStore.getEventKeyString(e);
+  if (!keyString) return;
+
+  const matched = shortcutStore.shortcuts.find(s => s.currentKey === keyString);
+  if (matched) {
+    // 局部快捷键不触发全局动作
+    if (['saveEdit', 'cancelEdit'].includes(matched.id)) return;
+
+    e.preventDefault();
+    shortcutStore.triggerShortcut(matched.id);
   }
 };
 

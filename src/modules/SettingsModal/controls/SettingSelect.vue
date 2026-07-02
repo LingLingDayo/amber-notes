@@ -142,7 +142,7 @@ const displayLabel = computed(() => {
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent-color);
   }
 
   &.open {

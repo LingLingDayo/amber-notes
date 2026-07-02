@@ -7,6 +7,7 @@ import { COLOR_PRESETS } from './colorPresets';
 import * as helpers from './stickyNotesHelpers';
 import { storage, pasteTextToCursor } from '@utils/storage';
 import { Note } from '@type';
+import { useShortcutStore } from './shortcutStore';
 
 export { COLOR_PRESETS };
 
@@ -24,6 +25,9 @@ export const useStickyNotesStore = defineStore('stickyNotes', () => {
   // 集中式数据加载
   const loadData = () => {
     try {
+      const shortcutStore = useShortcutStore();
+      shortcutStore.loadShortcuts();
+
       const storedCategories = storage.getItem('sticky_notes_categories');
       const storedNotes = storage.getItem('sticky_notes_notes');
 

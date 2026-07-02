@@ -5,6 +5,7 @@ import SettingTextarea from './controls/SettingTextarea.vue';
 import SettingSelect from './controls/SettingSelect.vue';
 import SettingRadio from './controls/SettingRadio.vue';
 import SettingButton from './controls/SettingButton.vue';
+import ShortcutInput from './controls/ShortcutInput.vue';
 import { SettingItem, evaluateVisibility } from './settingsConfig';
 import { useStickyNotesStore } from '@stores/stickyNotes';
 import { ref } from 'vue';
@@ -23,7 +24,7 @@ const onMouseEnter = () => {
 const onMouseLeave = () => {
   leaveTimer = window.setTimeout(() => {
     showCustomTooltip.value = false;
-  }, 200); // 200ms 的延迟，以适配 Tooltip 淡出动效
+  }, 200); // 200ms 的延迟，以适配 Tooltip 动效
 };
 
 const props = defineProps<{
@@ -50,8 +51,8 @@ const getDefaultTooltip = (item: SettingItem) => {
   if (item.options && item.options.length > 0) {
     if (Array.isArray(item.default)) {
       const labels = item.options
-        .filter(opt => item.default.includes(opt.value))
-        .map(opt => opt.label);
+          .filter(opt => item.default.includes(opt.value))
+          .map(opt => opt.label);
       valStr = labels.join(', ');
     } else {
       const opt = item.options.find(opt => opt.value === item.default);
@@ -65,7 +66,7 @@ const getDefaultTooltip = (item: SettingItem) => {
 };
 
 // 计算样式以支持自定义宽度百分比
-const groupStyle = computed(() => {
+const itemStyle = computed(() => {
   if (!props.item.width) return {};
   if (props.item.width.endsWith('%')) {
     const percent = parseFloat(props.item.width);
@@ -104,13 +105,15 @@ const isVisible = computed(() => {
 <template>
   <div
     v-if="isVisible"
-    class="settings-group"
+    class="setting-item"
     :class="[`type-${item.type}`, { 'is-partial-width': item.width && item.width !== '100%' }]"
-    :style="groupStyle"
+    :style="itemStyle"
   >
-    <div class="group-header">
-      <div 
-        class="group-label" 
+    <!-- 统一渲染选项的标题及介绍文本，完美保留其容器样式（底边框线、内边距、字号） -->
+    <div v-if="item.label || item.desc" class="item-header">
+      <div
+        v-if="item.label"
+        class="item-label"
         :data-tooltip="item.tooltip"
         :data-tooltip-custom="item.key === 'dateFormat' ? '' : undefined"
         @mouseenter="item.key === 'dateFormat' && onMouseEnter()"
@@ -118,12 +121,18 @@ const isVisible = computed(() => {
       >
         {{ item.label }}
       </div>
-      <div v-if="item.desc" class="group-desc">
+      <div v-if="item.desc" class="item-desc">
         {{ item.desc }}
       </div>
     </div>
 
-    <div class="group-control">
+    <!-- 1. 自定义大面板组件类型：直接在 setting-item 纵向列容器下渲染，绝不用 item-control 横向容器包裹，避免子项并排 -->
+    <template v-if="item.type === 'component' && item.component">
+      <component :is="item.component" />
+    </template>
+
+    <!-- 2. 普通单体设置项类型：采用 item-control 弹性行布局包裹输入控件 -->
+    <div v-else class="item-control">
       <!-- 1. Input -->
       <SettingInput
         v-if="item.type === 'input'"
@@ -179,14 +188,23 @@ const isVisible = computed(() => {
         </template>
       </div>
 
-      <!-- 6. Custom Component -->
-      <component
-        :is="item.component"
-        v-else-if="item.type === 'component' && item.component"
+      <!-- 7. Shortcut -->
+      <ShortcutInput
+        v-else-if="item.type === 'shortcut'"
+        v-model="value"
+        :shortcut-id="item.key"
+        @error="msg => store.showToast(msg, 'warning')"
       />
+
+      <!-- 8. Text Content -->
+      <div
+        v-else-if="item.type === 'text'"
+        class="setting-text-content"
+        v-html="item.content"
+      ></div>
     </div>
 
-    <!-- 使用 Teleport 传送到全局 Tooltip 容器中 -->
+    <!-- 3. 自定义日期格式说明 Tooltip 的 Teleport 挂载点 -->
     <Teleport v-if="showCustomTooltip && item.key === 'dateFormat'" to="#global-tooltip">
       <div class="tooltip-table-container">
         <div class="tooltip-title">
@@ -252,37 +270,76 @@ const isVisible = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-.settings-group {
+.setting-item {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
   // padding-bottom: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   box-sizing: border-box;
 
-  .group-header {
+  .item-header {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
 
-  .group-label {
+  .item-label {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
+    transition: color 0.2s ease;
+    width: fit-content;
+
+    &[data-tooltip], &[data-tooltip-custom] {
+      cursor: help;
+
+      &:hover {
+        color: var(--accent-color);
+      }
+    }
   }
 
-  .group-desc {
+  .item-desc {
     font-size: 11px;
     color: var(--text-muted);
     line-height: 1.5;
   }
 
-  .group-control {
+  .item-control {
     display: flex;
     gap: 10px;
     margin: 4px 0;
     width: 100%;
+  }
+}
+
+.setting-text-content {
+  width: 100%;
+
+  :deep(ul) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    li {
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      position: relative;
+      padding-left: 12px;
+
+      &::before {
+        content: '•';
+        position: absolute;
+        left: 0;
+        color: var(--accent-color);
+      }
+    }
   }
 }
 
@@ -293,7 +350,7 @@ const isVisible = computed(() => {
 }
 
 @media (max-width: 599px) {
-  .settings-group {
+  .setting-item {
     width: 100% !important;
   }
 }

@@ -172,6 +172,10 @@ const handleWheel = (e: WheelEvent) => {
   transition: all 0.2s ease;
   outline: none;
 
+  &:hover:not(:disabled) {
+    border-color: var(--accent-color);
+  }
+
   &:focus {
     border-color: var(--accent-color);
     box-shadow: 0 0 0 2px var(--accent-light);

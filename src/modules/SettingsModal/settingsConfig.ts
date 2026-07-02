@@ -1,7 +1,8 @@
 import { markRaw } from 'vue';
-import { Sun, Moon, Columns, Settings, Database, Info, Trash2 } from 'lucide-vue-next';
+import { Sun, Moon, Columns, Settings, Database, Info, Trash2, Keyboard } from 'lucide-vue-next';
 import DataPanel from './DataPanel.vue';
 import AboutPanel from './AboutPanel.vue';
+import ShortcutPanel from './ShortcutPanel.vue';
 
 export interface SettingOption {
   label: string;
@@ -9,7 +10,7 @@ export interface SettingOption {
   icon?: any;
 }
 
-export type SettingType = 'input' | 'textarea' | 'select' | 'multiselect' | 'radio' | 'button-group' | 'component';
+export type SettingType = 'input' | 'textarea' | 'select' | 'multiselect' | 'radio' | 'button-group' | 'component' | 'shortcut' | 'text';
 
 export interface ButtonConfig {
   label: string | ((store: any) => string);
@@ -57,6 +58,7 @@ export interface SettingItem {
   buttons?: ButtonConfig[];
   component?: any;
   visible?: boolean | ((store: any) => boolean);
+  content?: string;
 }
 
 export interface SettingGroup {
@@ -189,7 +191,7 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         key: 'quickActions',
         label: '快捷操作',
         type: 'button-group',
-        desc: '在设置中快速执行清空当前分类或清空回收站等动作。',
+        desc: '在设置中快速执行清空当前分类或清空回收站等管理动作。',
         buttons: [
           {
             label: (store: any) => {
@@ -221,6 +223,20 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         type: 'component',
         desc: '导出备份能将当前所有的便签及分类列表转换为备份文件；导入恢复能从 JSON 备份中加载数据。',
         component: markRaw(DataPanel)
+      }
+    ]
+  },
+  {
+    id: 'shortcuts',
+    title: '快捷键与快捷操作',
+    tabTitle: '快捷设置',
+    icon: markRaw(Keyboard),
+    items: [
+      {
+        key: 'shortcutSettings',
+        label: '快捷设置',
+        type: 'component',
+        component: markRaw(ShortcutPanel)
       }
     ]
   },
