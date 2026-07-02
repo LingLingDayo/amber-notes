@@ -1,26 +1,13 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { ChevronDown, Check } from 'lucide-vue-next';
+import SettingWrapper from './SettingWrapper.vue';
+import { SettingItem, SettingOption } from '../settingsConfig';
 
-interface Option {
-  label: string;
-  value: any;
-}
-
-const props = withDefaults(
-  defineProps<{
-    modelValue: any;
-    options: Option[];
-    multiple?: boolean;
-    placeholder?: string;
-    width?: string;
-  }>(),
-  {
-    multiple: false,
-    placeholder: '请选择...',
-    width: ''
-  }
-);
+const props = defineProps<{
+  modelValue: any;
+  item: SettingItem;
+}>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: any): void;
@@ -28,6 +15,11 @@ const emit = defineEmits<{
 
 const isOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
+
+const options = computed(() => props.item.options || []);
+const multiple = computed(() => props.item.type === 'multiselect');
+const placeholder = computed(() => props.item.placeholder || '请选择...');
+const itemProps = computed(() => (props.item.props as any) || {});
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
@@ -52,14 +44,14 @@ onUnmounted(() => {
 });
 
 const isSelected = (val: any) => {
-  if (props.multiple) {
+  if (multiple.value) {
     return Array.isArray(props.modelValue) && props.modelValue.includes(val);
   }
   return props.modelValue === val;
 };
 
-const handleSelect = (option: Option) => {
-  if (props.multiple) {
+const handleSelect = (option: SettingOption) => {
+  if (multiple.value) {
     const currentValues = Array.isArray(props.modelValue) ? [...props.modelValue] : [];
     const index = currentValues.indexOf(option.value);
     if (index > -1) {
@@ -75,49 +67,52 @@ const handleSelect = (option: Option) => {
 };
 
 const displayLabel = computed(() => {
-  if (props.multiple) {
+  if (multiple.value) {
     const values = Array.isArray(props.modelValue) ? props.modelValue : [];
-    if (values.length === 0) return props.placeholder;
-    const selectedLabels = props.options
+    if (values.length === 0) return placeholder.value;
+    const selectedLabels = options.value
       .filter(opt => values.includes(opt.value))
       .map(opt => opt.label);
     return selectedLabels.join(', ');
   } else {
-    const selectedOpt = props.options.find(opt => opt.value === props.modelValue);
-    return selectedOpt ? selectedOpt.label : props.placeholder;
+    const selectedOpt = options.value.find(opt => opt.value === props.modelValue);
+    return selectedOpt ? selectedOpt.label : placeholder.value;
   }
 });
-
 </script>
 
 <template>
-  <div ref="selectRef" class="custom-select-container" :style="width ? { width } : undefined">
-    <div
-      class="select-trigger"
-      :class="{ open: isOpen }"
-      @click="toggleDropdown"
-    >
-      <span class="trigger-text" :class="{ placeholder: !multiple && (modelValue === undefined || modelValue === '') }">
-        {{ displayLabel }}
-      </span>
-      <ChevronDown class="arrow-icon" :class="{ rotate: isOpen }" />
-    </div>
-
-    <Transition name="slide-up">
-      <div v-if="isOpen" class="select-dropdown">
+  <SettingWrapper :item="item">
+    <template #default="{ defaultTooltip }">
+      <div ref="selectRef" class="custom-select-container" :data-tooltip="defaultTooltip" :style="itemProps.style">
         <div
-          v-for="option in options"
-          :key="option.value"
-          class="dropdown-item"
-          :class="{ active: isSelected(option.value) }"
-          @click="handleSelect(option)"
+          class="select-trigger"
+          :class="{ open: isOpen }"
+          @click="toggleDropdown"
         >
-          <span class="item-label">{{ option.label }}</span>
-          <Check v-if="isSelected(option.value)" class="check-icon" />
+          <span class="trigger-text" :class="{ placeholder: !multiple && (modelValue === undefined || modelValue === '') }">
+            {{ displayLabel }}
+          </span>
+          <ChevronDown class="arrow-icon" :class="{ rotate: isOpen }" />
         </div>
+
+        <Transition name="slide-up">
+          <div v-if="isOpen" class="select-dropdown">
+            <div
+              v-for="option in options"
+              :key="option.value"
+              class="dropdown-item"
+              :class="{ active: isSelected(option.value) }"
+              @click="handleSelect(option)"
+            >
+              <span class="item-label">{{ option.label }}</span>
+              <Check v-if="isSelected(option.value)" class="check-icon" />
+            </div>
+          </div>
+        </Transition>
       </div>
-    </Transition>
-  </div>
+    </template>
+  </SettingWrapper>
 </template>
 
 <style lang="scss" scoped>

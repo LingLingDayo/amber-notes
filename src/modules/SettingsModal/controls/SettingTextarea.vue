@@ -1,17 +1,12 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
+import SettingWrapper from './SettingWrapper.vue';
+import { SettingItem } from '../settingsConfig';
 
-const props = withDefaults(
-  defineProps<{
-    modelValue: string;
-    placeholder?: string;
-    rows?: number;
-  }>(),
-  {
-    placeholder: '',
-    rows: 3
-  }
-);
+const props = defineProps<{
+  modelValue: string;
+  item: SettingItem;
+}>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: string): void;
@@ -21,17 +16,25 @@ const value = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
 });
+
+const itemProps = computed(() => (props.item.props as any) || {});
 </script>
 
 <template>
-  <div class="setting-textarea-wrapper">
-    <textarea
-      v-model="value"
-      :placeholder="placeholder"
-      :rows="rows"
-      class="setting-textarea"
-    ></textarea>
-  </div>
+  <SettingWrapper :item="item">
+    <template #default="{ defaultTooltip }">
+      <div class="setting-textarea-wrapper">
+        <textarea
+          v-model="value"
+          :placeholder="item.placeholder"
+          :rows="itemProps.rows || 3"
+          :style="itemProps.style"
+          class="setting-textarea"
+          :data-tooltip="defaultTooltip"
+        ></textarea>
+      </div>
+    </template>
+  </SettingWrapper>
 </template>
 
 <style lang="scss" scoped>

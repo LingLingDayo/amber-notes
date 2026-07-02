@@ -1,28 +1,36 @@
 <script lang="ts" setup>
 import { useSettings } from './useSettings';
 import { Download, Upload } from 'lucide-vue-next';
+import SettingWrapper from './controls/SettingWrapper.vue';
+import { SettingItem } from './settingsConfig';
+
+defineProps<{
+  item: SettingItem;
+}>();
 
 const { fileInputRef, triggerFileInput, handleFileImport, exportBackup } = useSettings();
 </script>
 
 <template>
-  <div class="group-control button-row">
-    <input
-      ref="fileInputRef"
-      type="file"
-      accept=".json"
-      class="hidden-file-input"
-      @change="handleFileImport"
-    />
-    <button class="action-btn" @click="exportBackup">
-      <Download class="control-icon" />
-      <span>导出数据备份</span>
-    </button>
-    <button class="action-btn" @click="triggerFileInput">
-      <Upload class="control-icon" />
-      <span>导入数据恢复</span>
-    </button>
-  </div>
+  <SettingWrapper :item="item">
+    <div class="group-control button-row">
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept=".json"
+        class="hidden-file-input"
+        @change="handleFileImport"
+      />
+      <button class="action-btn" @click="exportBackup">
+        <Download class="control-icon" />
+        <span>导出数据备份</span>
+      </button>
+      <button class="action-btn" @click="triggerFileInput">
+        <Upload class="control-icon" />
+        <span>导入数据恢复</span>
+      </button>
+    </div>
+  </SettingWrapper>
 </template>
 
 <style lang="scss" scoped>

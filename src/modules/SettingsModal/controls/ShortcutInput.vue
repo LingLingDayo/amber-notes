@@ -2,10 +2,12 @@
 import { ref, watch } from 'vue';
 import { useShortcutStore } from '@stores/shortcutStore';
 import { RefreshCw, X } from 'lucide-vue-next';
+import SettingWrapper from './SettingWrapper.vue';
+import { SettingItem } from '../settingsConfig';
 
 const props = defineProps<{
   modelValue: string;
-  shortcutId: string;
+  item: SettingItem;
   disabled?: boolean;
 }>();
 
@@ -16,6 +18,7 @@ const emit = defineEmits<{
 
 const shortcutStore = useShortcutStore();
 const isRecording = ref(false);
+const shortcutId = props.item.key;
 
 watch(isRecording, (val) => {
   shortcutStore.isRecording = val;
@@ -59,7 +62,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
   const result = parts.join('+');
   
   // 更新并检测冲突
-  const res = shortcutStore.updateShortcut(props.shortcutId, result);
+  const res = shortcutStore.updateShortcut(shortcutId, result);
   if (!res.success) {
     emit('error', res.message || '快捷键冲突');
   } else {
@@ -78,50 +81,54 @@ const stopRecording = () => {
 };
 
 const handleReset = () => {
-  shortcutStore.resetShortcut(props.shortcutId);
-  const match = shortcutStore.shortcuts.find(s => s.id === props.shortcutId);
+  shortcutStore.resetShortcut(shortcutId);
+  const match = shortcutStore.shortcuts.find(s => s.id === shortcutId);
   if (match) {
     emit('update:modelValue', match.currentKey);
   }
 };
 
 const handleClear = () => {
-  shortcutStore.clearShortcut(props.shortcutId);
+  shortcutStore.clearShortcut(shortcutId);
   emit('update:modelValue', '');
 };
 </script>
 
 <template>
-  <div class="shortcut-input-group">
-    <div
-      tabindex="0"
-      class="shortcut-input-box"
-      :class="{ recording: isRecording, disabled: disabled }"
-      @click="startRecording"
-      @keydown="handleKeyDown"
-      @blur="stopRecording"
-    >
-      <span class="shortcut-text">{{ isRecording ? '正在录制...' : (modelValue || '无') }}</span>
-      <span v-if="isRecording" class="rec-badge">REC</span>
-    </div>
+  <SettingWrapper :item="item">
+    <template #default>
+      <div class="shortcut-input-group">
+        <div
+          tabindex="0"
+          class="shortcut-input-box"
+          :class="{ recording: isRecording, disabled: disabled }"
+          @click="startRecording"
+          @keydown="handleKeyDown"
+          @blur="stopRecording"
+        >
+          <span class="shortcut-text">{{ isRecording ? '正在录制...' : (modelValue || '无') }}</span>
+          <span v-if="isRecording" class="rec-badge">REC</span>
+        </div>
 
-    <button
-      class="control-btn"
-      data-tooltip="重置为默认值"
-      :disabled="disabled"
-      @click="handleReset"
-    >
-      <RefreshCw class="control-icon" />
-    </button>
-    <button
-      class="control-btn danger"
-      data-tooltip="清除快捷键"
-      :disabled="disabled || !modelValue"
-      @click="handleClear"
-    >
-      <X class="control-icon" />
-    </button>
-  </div>
+        <button
+          class="control-btn"
+          data-tooltip="重置为默认值"
+          :disabled="disabled"
+          @click="handleReset"
+        >
+          <RefreshCw class="control-icon" />
+        </button>
+        <button
+          class="control-btn danger"
+          data-tooltip="清除快捷键"
+          :disabled="disabled || !modelValue"
+          @click="handleClear"
+        >
+          <X class="control-icon" />
+        </button>
+      </div>
+    </template>
+  </SettingWrapper>
 </template>
 
 <style lang="scss" scoped>

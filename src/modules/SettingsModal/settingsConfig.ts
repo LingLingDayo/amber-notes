@@ -59,6 +59,9 @@ export interface SettingItem {
   component?: any;
   visible?: boolean | ((store: any) => boolean);
   content?: string;
+  controlWidth?: string;
+  showHeader?: boolean;
+  hideHeader?: boolean;
 }
 
 export interface SettingGroup {

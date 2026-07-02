@@ -1,18 +1,19 @@
 <script lang="ts" setup>
-interface Option {
-  label: string;
-  value: any;
-  icon?: any;
-}
+import { computed } from 'vue';
+import SettingWrapper from './SettingWrapper.vue';
+import { SettingItem } from '../settingsConfig';
 
-defineProps<{
+const props = defineProps<{
   modelValue: any;
-  options: Option[];
+  item: SettingItem;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: any): void;
 }>();
+
+const options = computed(() => props.item.options || []);
+const itemProps = computed(() => (props.item.props as any) || {});
 
 const selectOption = (val: any) => {
   emit('update:modelValue', val);
@@ -20,18 +21,22 @@ const selectOption = (val: any) => {
 </script>
 
 <template>
-  <div class="setting-radio-group">
-    <button
-      v-for="option in options"
-      :key="option.value"
-      class="radio-btn"
-      :class="{ active: modelValue === option.value }"
-      @click="selectOption(option.value)"
-    >
-      <component :is="option.icon" v-if="option.icon" class="control-icon" />
-      <span>{{ option.label }}</span>
-    </button>
-  </div>
+  <SettingWrapper :item="item">
+    <template #default="{ defaultTooltip }">
+      <div class="setting-radio-group" :data-tooltip="defaultTooltip" :style="itemProps.style">
+        <button
+          v-for="option in options"
+          :key="option.value"
+          class="radio-btn"
+          :class="{ active: modelValue === option.value }"
+          @click="selectOption(option.value)"
+        >
+          <component :is="option.icon" v-if="option.icon" class="control-icon" />
+          <span>{{ option.label }}</span>
+        </button>
+      </div>
+    </template>
+  </SettingWrapper>
 </template>
 
 <style lang="scss" scoped>

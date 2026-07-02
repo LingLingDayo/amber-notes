@@ -1,35 +1,28 @@
 <script lang="ts" setup>
-const props = withDefaults(
-  defineProps<{
-    modelValue: string | number;
-    placeholder?: string;
-    type?: string;
-    min?: number;
-    max?: number;
-    step?: number;
-  }>(),
-  {
-    placeholder: '',
-    type: 'text',
-    min: undefined,
-    max: undefined,
-    step: undefined
-  }
-);
+import { computed } from 'vue';
+import SettingWrapper from './SettingWrapper.vue';
+import { SettingItem } from '../settingsConfig';
+
+const props = defineProps<{
+  modelValue: string | number;
+  item: SettingItem;
+}>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: string | number): void;
 }>();
 
+const itemProps = computed(() => (props.item.props as any) || {});
+
 const handleInput = (e: Event) => {
   const input = e.target as HTMLInputElement;
   const val = input.value;
-  emit('update:modelValue', props.type === 'number' ? (val === '' ? '' : Number(val)) : val);
+  emit('update:modelValue', itemProps.value.type === 'number' ? (val === '' ? '' : Number(val)) : val);
 };
 
 // 数字输入限制
 const handleKeydown = (e: KeyboardEvent) => {
-  if (props.type !== 'number') return;
+  if (itemProps.value.type !== 'number') return;
 
   const allowedKeys = [
     'Backspace',
@@ -46,13 +39,13 @@ const handleKeydown = (e: KeyboardEvent) => {
     return;
   }
 
-  // 仅允许数字
   if (/^[0-9]$/.test(e.key)) {
     return;
   }
 
   // 负号逻辑
-  if (e.key === '-' && (props.min === undefined || props.min < 0)) {
+  const min = itemProps.value.min;
+  if (e.key === '-' && (min === undefined || min < 0)) {
     const input = e.target as HTMLInputElement;
     if (!input.value.includes('-') && input.selectionStart === 0) {
       return;
@@ -60,7 +53,8 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 
   // 小数点逻辑 (基于 step 决定是否允许小数)
-  const isDecimalAllowed = props.step ? props.step % 1 !== 0 : true;
+  const step = itemProps.value.step;
+  const isDecimalAllowed = step ? step % 1 !== 0 : true;
   if (e.key === '.' && isDecimalAllowed) {
     const input = e.target as HTMLInputElement;
     if (!input.value.includes('.')) {
@@ -73,13 +67,15 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 // 失去焦点合理性验证与边界纠正
 const handleBlur = (e: FocusEvent) => {
-  if (props.type !== 'number') return;
+  if (itemProps.value.type !== 'number') return;
 
   const input = e.target as HTMLInputElement;
   const valStr = input.value.trim();
+  const min = itemProps.value.min;
+  const max = itemProps.value.max;
 
   if (valStr === '') {
-    const fallback = props.min !== undefined ? props.min : 0;
+    const fallback = min !== undefined ? min : 0;
     input.value = String(fallback); // 强制 DOM 拉回同步
     emit('update:modelValue', fallback);
     return;
@@ -87,14 +83,14 @@ const handleBlur = (e: FocusEvent) => {
 
   let num = Number(valStr);
   if (isNaN(num)) {
-    num = props.min !== undefined ? props.min : 0;
+    num = min !== undefined ? min : 0;
   }
 
-  if (props.min !== undefined && num < props.min) {
-    num = props.min;
+  if (min !== undefined && num < min) {
+    num = min;
   }
-  if (props.max !== undefined && num > props.max) {
-    num = props.max;
+  if (max !== undefined && num > max) {
+    num = max;
   }
 
   input.value = String(num); // 强制 DOM 拉回同步
@@ -103,14 +99,18 @@ const handleBlur = (e: FocusEvent) => {
 
 // 聚焦状态下的鼠标滚轮微调
 const handleWheel = (e: WheelEvent) => {
-  if (props.type !== 'number') return;
+  if (itemProps.value.type !== 'number') return;
 
   const input = e.target as HTMLInputElement;
   if (document.activeElement !== input) return;
 
   let currentVal = Number(props.modelValue);
+  const min = itemProps.value.min;
+  const max = itemProps.value.max;
+  const stepConfig = itemProps.value.step;
+
   if (isNaN(currentVal)) {
-    currentVal = props.min !== undefined ? props.min : 0;
+    currentVal = min !== undefined ? min : 0;
   }
 
   let step = 1;
@@ -118,18 +118,18 @@ const handleWheel = (e: WheelEvent) => {
     step = 100;
   } else if (e.shiftKey) {
     step = 10;
-  } else if (props.step !== undefined) {
-    step = props.step;
+  } else if (stepConfig !== undefined) {
+    step = stepConfig;
   }
 
   const direction = e.deltaY < 0 ? 1 : -1;
   let newVal = currentVal + direction * step;
 
-  if (props.min !== undefined && newVal < props.min) {
-    newVal = props.min;
+  if (min !== undefined && newVal < min) {
+    newVal = min;
   }
-  if (props.max !== undefined && newVal > props.max) {
-    newVal = props.max;
+  if (max !== undefined && newVal > max) {
+    newVal = max;
   }
 
   input.value = String(newVal); // 强制 DOM 拉回同步
@@ -138,21 +138,27 @@ const handleWheel = (e: WheelEvent) => {
 </script>
 
 <template>
-  <div class="setting-input-wrapper">
-    <input
-      :value="modelValue"
-      :type="type"
-      :placeholder="placeholder"
-      :min="min"
-      :max="max"
-      :step="step"
-      class="setting-input"
-      @input="handleInput"
-      @keydown="handleKeydown"
-      @blur="handleBlur"
-      @wheel.prevent="handleWheel"
-    />
-  </div>
+  <SettingWrapper :item="item">
+    <template #default="{ defaultTooltip }">
+      <div class="setting-input-wrapper">
+        <input
+          :value="modelValue"
+          :type="itemProps.type || 'text'"
+          :placeholder="item.placeholder"
+          :min="itemProps.min"
+          :max="itemProps.max"
+          :step="itemProps.step"
+          :style="itemProps.style"
+          class="setting-input"
+          :data-tooltip="defaultTooltip"
+          @input="handleInput"
+          @keydown="handleKeydown"
+          @blur="handleBlur"
+          @wheel.prevent="handleWheel"
+        />
+      </div>
+    </template>
+  </SettingWrapper>
 </template>
 
 <style lang="scss" scoped>
