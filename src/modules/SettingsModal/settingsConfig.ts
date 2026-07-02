@@ -143,11 +143,11 @@ export const SETTINGS_SCHEMA: SettingGroup[] = [
         desc: '在“自适应”展示列数模式下生效，单个便签卡片的最小宽度限制。默认值为 240，允许设置范围为 100 - 1000。',
         default: 240,
         placeholder: '240',
+        controlWidth: '50%',
         props: {
           type: 'number',
           min: 100,
-          max: 1000,
-          style: 'max-width: 120px;'
+          max: 1000
         },
         visible: (store: any) => store.gridColumns === 'auto'
       },
